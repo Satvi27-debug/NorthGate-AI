@@ -56,9 +56,29 @@ credentials.json
 service-account*.json
 
 # --- Regenerable binary data (see the rule at the top) ----------------------
+# One deliberate exception. The deployed instance at northgate-ai.streamlit.app
+# runs as a fresh clone, so with every binary excluded it showed "not built" on
+# every tile - the panels had nothing to draw. Committing the full artifacts
+# would fix that at 23 MB, of which 19.5 MB is features.parquet: 142 columns of
+# which the dashboard reads four. The snapshot plus the other four files the
+# panels read costs 3.6 MB and renders the same numbers.
+#   features_dashboard.parquet  0.4 MB, 4 of 142 columns
+#   feature_manifest.json        the true signal-feature count, so the Overview
+#                                tile does not report the snapshot's 4 columns
 data/raw/
 data/processed/*.parquet
 data/processed/*.npy
+# The four read-only artifacts the deployed dashboard actually draws from, plus
+# the feature snapshot. Together 3.6 MB. Without them every panel renders its
+# "not built" placeholder, which is how the first deployed instance looked.
+# They stay regenerable - `rebuild_dataset.py` and `retrain_models.py` rewrite
+# all of them - and test_staleness.py fails the build if any is older than the
+# feature table, so a stale copy cannot masquerade as current.
+!data/processed/features_dashboard.parquet
+!data/processed/cleaned_panel.parquet
+!data/processed/ml_predictions.parquet
+!data/processed/dl_predictions.parquet
+!data/processed/monte_carlo_cloud.npy
 data/processed/*.pkl
 models/*.keras
 models/*.pkl

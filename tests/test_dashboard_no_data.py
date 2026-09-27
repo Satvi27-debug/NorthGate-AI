@@ -44,7 +44,7 @@ sys.path.insert(0, str(ROOT / "dashboard"))
 GITIGNORED_SUFFIXES = (".parquet", ".npy", ".pkl", ".keras", ".h5", ".joblib")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def empty_app(tmp_path_factory):
     """Redirect ONLY the gitignored binaries, exactly as a fresh clone would.
 
@@ -54,6 +54,13 @@ def empty_app(tmp_path_factory):
 
     The paths are DISCOVERED from the module rather than hand-listed, so a newly
     added artifact cannot silently escape the test.
+
+    FUNCTION scope, deliberately. This mutates attributes on the shared `app`
+    module, so a module-scoped fixture would hold those redirects in place for
+    every later class in the file - and the snapshot class, which needs the real
+    paths, then saw a redirect DASHBOARD_SNAPSHOT into an empty tree and
+    concluded the fallback was broken. Scoping to the function means the
+    redirects are undone before anything else runs.
     """
     import app
 
@@ -212,6 +219,155 @@ class TestNoArtifacts:
         buf = io.StringIO()
         with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
             fn(self.cfg, D, *args)
+
+
+class TestSnapshotCoversEveryPanel:
+    """Every panel must render from the committed snapshot alone.
+
+    The deployed instance runs the 0.68 MB snapshot, not the 19.5 MB full table.
+    Its column list was written by hand and omitted `Vol_21d` and `VIX_Level`,
+    which only `panel_risk` touches: seven panels rendered and the Risk panel
+    raised `KeyError: 'Vol_21d'`. Every other test passed, because every other
+    test ran against the full table where those columns exist.
+
+    This class therefore hides the full table from disk and runs all eight
+    panels against what a fresh clone actually has.
+
+    An earlier version derived the required columns from the AST instead. It was
+    wrong twice: a name-based sweep pulled in `Market_Mood` and `Article_Count`
+    (which live in the mood table and would never be in a feature snapshot), and
+    a dataflow version swept in `MAE`, `Model`, `Return_1Y`, `first` and `last`
+    from unrelated panels because a transitive closure over a whole module cannot
+    tell which frame a subscript came from. A check that demands the impossible
+    gets deleted, so it had to go. Running the panels answers the actual
+    question - does the deployed app work - and cannot be argued with.
+    """
+
+    @staticmethod
+    def _hide_full_table():
+        import shutil
+        import tempfile
+        from pathlib import Path
+
+        full = ROOT / "data" / "processed" / "features.parquet"
+        if not full.exists():
+            return None, None
+        tmp = Path(tempfile.mkdtemp(prefix="hide_full_"))
+        dst = tmp / full.name
+        shutil.move(str(full), str(dst))
+        return dst, full
+
+    def test_all_panels_render_from_the_snapshot(self):
+        import contextlib
+        import io
+        import shutil
+
+        snap = ROOT / "data" / "processed" / "features_dashboard.parquet"
+        if not snap.exists():
+            pytest.skip("snapshot not built; run "
+                        "`python scripts/build_dashboard_snapshot.py`")
+
+        dst, orig = self._hide_full_table()
+        try:
+            import app
+
+            try:
+                app.load_all.clear()
+            except AttributeError:
+                pass
+            D = app.load_all()
+            assert D["features"] is not None, (
+                "the snapshot was not picked up with the full table hidden - the "
+                "fallback in _read_features is not working"
+            )
+            cfg = app.get_config()
+            t0 = cfg["universe"][0]
+            cases = {
+                "Overview": lambda: app.panel_overview(cfg, D),
+                "Price & Prediction": lambda: app.panel_price(cfg, D, t0, 1, 1.96),
+                "Models": lambda: app.panel_models(cfg, D),
+                "Portfolio": lambda: app.panel_portfolio(cfg, D, 0.04),
+                "Risk": lambda: app.panel_risk(cfg, D, t0),
+                "Sentiment": lambda: app.panel_sentiment(cfg, D, t0),
+                "Recommendations": lambda: app.panel_recommendations(cfg, D),
+                "Ranking": lambda: app.panel_ranking(cfg, D),
+            }
+            buf = io.StringIO()
+            failures = []
+            for name, fn in cases.items():
+                try:
+                    with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                        fn()
+                except Exception as exc:  # noqa: BLE001
+                    failures.append(f"{name}: {type(exc).__name__}: {exc}")
+            assert not failures, (
+                "these panels fail against the committed snapshot, which is what "
+                f"a fresh clone and the deployed app actually run on: {failures}. "
+                f"Add the missing column(s) to DASHBOARD_COLUMNS in "
+                f"scripts/build_dashboard_snapshot.py and rebuild the snapshot."
+            )
+        finally:
+            if dst is not None:
+                shutil.move(str(dst), str(orig))
+                try:
+                    app.load_all.clear()
+                except AttributeError:
+                    pass
+
+    def test_manifest_reports_the_true_feature_count(self):
+        """The Overview tile must not count the snapshot's own columns.
+
+        Six columns in the snapshot against 135 signal features in the system:
+        counting the loaded table would report "6 signals per stock", which is a
+        false statement about the work rather than a rounding error.
+        """
+        import json
+
+        man = ROOT / "data" / "processed" / "feature_manifest.json"
+        if not man.exists():
+            pytest.skip("manifest not built")
+        d = json.loads(man.read_text(encoding="utf-8"))
+        assert d["n_signal_features"] > len(d["dashboard_columns"]), (
+            f"the manifest claims {d['n_signal_features']} signal features but "
+            f"ships only {len(d['dashboard_columns'])} columns; the manifest "
+            f"exists precisely so the count is not read off the snapshot"
+        )
+        assert d["n_signal_features"] >= 100, (
+            f"n_signal_features={d['n_signal_features']} is implausibly low for "
+            f"a system documented at 132+ features; the column classification "
+            f"has probably regressed"
+        )
+
+    def test_the_dashboard_reads_the_manifest_count(self):
+        import json
+
+        sys.path.insert(0, str(ROOT / "dashboard"))
+        import app
+
+        man = ROOT / "data" / "processed" / "feature_manifest.json"
+        if not man.exists():
+            pytest.skip("manifest not built")
+        n = json.loads(man.read_text(encoding="utf-8"))["n_signal_features"]
+        assert app.feature_count() == n, (
+            f"feature_count() returned {app.feature_count()}, the manifest says "
+            f"{n}; the Overview tile would misreport the size of the system"
+        )
+
+    def test_snapshot_is_a_real_reduction(self):
+        """The snapshot must be worth having, or the rule it broke was pointless."""
+        import json
+
+        man = ROOT / "data" / "processed" / "feature_manifest.json"
+        if not man.exists():
+            pytest.skip("manifest not built")
+        d = json.loads(man.read_text(encoding="utf-8"))
+        full = d["full_table_size_mb"]
+        small = d["snapshot_size_mb"]
+        assert small < full * 0.1, (
+            f"the snapshot is {small:.2f} MB against a {full:.2f} MB full table - "
+            f"it must be a genuine reduction, or committing it is not worth "
+            f"reversing the gitignore rule for"
+        )
 
 
 # A note on what deliberately is NOT here.

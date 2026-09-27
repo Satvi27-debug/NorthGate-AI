@@ -25,10 +25,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from src.common import (  # noqa: E402
     CLEANED_PANEL,
+    DASHBOARD_SNAPSHOT,
     DQ_REPORT_JSON,
     DL_METRICS,
     DL_PREDICTIONS,
     FEATURES,
+    FEATURE_MANIFEST,
     MARKET_MOOD,
     ML_METRICS,
     ML_PREDICTIONS,
@@ -390,12 +392,50 @@ def _read(path: Path):
     return pd.read_csv(path, index_col=0) if unnamed_first else pd.read_csv(path)
 
 
+def _read_features():
+    """The feature table, falling back to the dashboard snapshot.
+
+    The full table is 19.5 MB and gitignored, so a fresh clone - which is what
+    Streamlit Cloud runs - has none of it. The snapshot carries the four columns
+    the panels read and is 0.4 MB, so the repository stays cheap to clone and
+    the deployed dashboard still renders real numbers.
+
+    Falls back rather than reporting "not built": a panel that says it has no
+    data when it holds everything it needs is a worse failure than one running
+    on a documented subset.
+    """
+    if FEATURES.exists():
+        return _read(FEATURES)
+    return _read(DASHBOARD_SNAPSHOT)
+
+
+def feature_count() -> int:
+    """How many signal features the models were actually fitted on.
+
+    Read from the manifest rather than counted off whatever table loaded. With
+    the snapshot in play, counting its own four columns would report "4 signals
+    per stock" for a system built on 135 - which is not a rounding error, it is
+    a false statement about the work.
+    """
+    if FEATURE_MANIFEST.exists():
+        try:
+            import json
+
+            n = json.loads(FEATURE_MANIFEST.read_text(encoding="utf-8")).get(
+                "n_signal_features")
+            if isinstance(n, int) and n > 0:
+                return n
+        except (OSError, json.JSONDecodeError):
+            pass
+    return 0
+
+
 @st.cache_data(show_spinner="Loading panel data...")
 def load_all():
     """Every artifact the dashboard can render, read once and cached."""
     out = {
         "cleaned": _read(CLEANED_PANEL),
-        "features": _read(FEATURES),
+        "features": _read_features(),
         "leaderboard": _read(MODEL_LEADERBOARD),
         "ml_metrics": _read(ML_METRICS),
         "dl_metrics": _read(DL_METRICS),
@@ -747,14 +787,23 @@ def panel_overview(cfg: dict, D: dict) -> None:
 
     with cols[2]:
         if feat is not None:
-            n_feat = len([c for c in feat.columns
-                          if c not in ("Date", "Ticker", "Target", "Target_Price",
-                                       "Relative_Target", "Rank_Target",
-                                       "Open", "High", "Low", "Close",
-                                       "Adjusted Close", "Volume", "Outlier",
-                                       "Outlier_IQR")])
+            # The manifest is authoritative when present. Counting the loaded
+            # table's own columns is right only when that table is the full one:
+            # on the deployed snapshot it would report 4 signals per stock for
+            # a system built on 135, which is a false statement rather than a
+            # formatting slip.
+            n_feat = feature_count()
+            from_snapshot = n_feat > len(feat.columns)
+            if not n_feat:
+                n_feat = len([c for c in feat.columns
+                              if c not in ("Date", "Ticker", "Target", "Target_Price",
+                                           "Relative_Target", "Rank_Target",
+                                           "Open", "High", "Low", "Close",
+                                           "Adjusted Close", "Volume", "Outlier",
+                                           "Outlier_IQR")])
             stat_tile("Signals per stock", f"{n_feat}",
-                      "Price, volume, market, macro")
+                      "subset on screen, full count" if from_snapshot
+                      else "Price, volume, market, macro")
         else:
             stat_tile("Signals per stock", "-", "not built")
 

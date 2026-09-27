@@ -36,6 +36,14 @@ RAW_PRICES = RAW_DIR / "prices.parquet"
 RAW_MACRO = RAW_DIR / "macro.parquet"
 CLEANED_PANEL = PROCESSED_DIR / "cleaned_panel.parquet"
 FEATURES = PROCESSED_DIR / "features.parquet"
+# The four columns the dashboard reads, committed so a fresh clone - which is
+# what Streamlit Cloud runs - can still render. 0.4 MB against 19.5 MB for the
+# full table. Built by scripts/build_dashboard_snapshot.py.
+DASHBOARD_SNAPSHOT = PROCESSED_DIR / "features_dashboard.parquet"
+# The true count of signal features. The Overview panel reads this rather than
+# counting the loaded table's columns, which would report 4 for a system built
+# on 135 whenever the snapshot is in use.
+FEATURE_MANIFEST = PROCESSED_DIR / "feature_manifest.json"
 SENTIMENT_FEATURES = PROCESSED_DIR / "sentiment_features.parquet"
 MARKET_MOOD = PROCESSED_DIR / "market_mood.parquet"
 DQ_REPORT_JSON = REPORTS_DIR / "data_quality_report.json"

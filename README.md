@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 Northgate Quantitative Research
 AI-Based Stock Market Prediction & Portfolio Optimization System
 
@@ -252,3 +253,6 @@ guaranteed profitability.
 
 *This system is an educational research and decision-support tool. Its outputs do
 not constitute financial advice.*
+=======
+# NorthGate-AI
+>>>>>>> origin/main

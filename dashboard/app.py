@@ -1462,13 +1462,27 @@ def panel_portfolio(cfg: dict, D: dict, rf_rate: float) -> None:
                           yaxis_title="Expected yearly return (%)")
         base_layout(fig, height=380)
         st.plotly_chart(fig, use_container_width=True)
-        bullets([
+        # The caption has to respect the same guard as the chart above it. It
+        # did not, and that is how a deployed instance of this app died: the
+        # Monte-Carlo scatter is absent when the artifacts have not been built,
+        # the chart correctly drew nothing, and then this line called len() on
+        # None and took the whole panel - and the page - down. A caption is
+        # still code, and it has to survive the same inputs the chart does.
+        n_cloud = 0 if cloud is None else len(cloud)
+        notes = [
             f"Each grey dot is one other way of splitting the money. "
-            f"There are <b>{len(cloud):,}</b> of them.",
+            f"There are <b>{n_cloud:,}</b> of them.",
             "The blue line runs along the best of them.",
-            "The green star sits on that line — which confirms the maths found a "
-            "genuinely good mix, not a lucky one.",
-        ])
+        ]
+        if n_cloud:
+            notes.append(
+                "The green star sits on that line — which confirms the maths "
+                "found a genuinely good mix, not a lucky one.")
+        else:
+            notes.append(
+                "The scatter needs <code>python src/portfolio.py</code> to have "
+                "been run, so there are no sampled mixes to show yet.")
+        bullets(notes)
 
     # -- backtest ----------------------------------------------------------
     bt = D["backtest"]

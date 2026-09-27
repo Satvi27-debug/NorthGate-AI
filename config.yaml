@@ -217,7 +217,10 @@ dl:
 
 # --- Section 10 : sentiment ------------------------------------------------
 sentiment:
-  provider: finnhub
+  # `auto` prefers Finnhub whenever FINNHUB_API_KEY is set and falls back to
+  # GDELT otherwise. See src/sentiment_gdelt.py for why the fallback exists and
+  # what it costs. Finnhub is the PRD's implied provider and stays preferred.
+  provider: auto
   api_key_env: FINNHUB_API_KEY
   market_close_hour: 16             # news at/after this maps to the NEXT session
   finbert_model: ProsusAI/finbert
@@ -226,6 +229,40 @@ sentiment:
   momentum_window: 3
   news_volume_window: 7
   finbert_batch_size: 32
+  gdelt:
+    # GDELT caps one request at 250 records, so a wide window is silently
+    # truncated to its most recent slice. 120-day chunks keep every chunk under
+    # the cap, so the dates we report are the dates we actually fetched.
+    chunk_days: 120
+    max_records: 250
+    # GDELT throttles hard. Measured: 18s apart still drew repeated HTTP 429s
+    # on a busy IP, so 45s is the default now. Combined with the chunk cache in
+    # sentiment_gdelt.fetch_news_gdelt, a slow rate costs wall time but never
+    # loses work already fetched.
+    throttle_seconds: 45
+    # The ablation is a held-out-window measurement, so history older than the
+    # test window is fetched, paid for, then discarded. 600 days covers the
+    # test window (2025-02-07 onward) in five chunks instead of ~31.
+    lookback_days: 600
+    # Wall-clock ceiling on the whole fetch. GDELT stopped answering this
+    # machine outright during development (HTTP 429 on every one of 60
+    # requests), and without a deadline a dead service means waiting out every
+    # backoff of every chunk. Cached chunks mean a re-run resumes rather than
+    # restarting.
+    max_total_seconds: 900
+    # Company names, not tickers. A bare "AAPL" matches ticker tables and
+    # incidental strings; the company name matches the company in prose.
+    queries:
+      AAPL: '"Apple Inc"'
+      MSFT: '"Microsoft Corp"'
+      JPM: '"JPMorgan Chase"'
+      XOM: '"Exxon Mobil"'
+      JNJ: '"Johnson & Johnson"'
+      PG: '"Procter & Gamble"'
+      NVDA: '"Nvidia Corp"'
+      KO: '"Coca-Cola"'
+      CAT: '"Caterpillar Inc"'
+      HD: '"Home Depot"'
 
 # --- Section 11 : portfolio optimisation -----------------------------------
 portfolio:

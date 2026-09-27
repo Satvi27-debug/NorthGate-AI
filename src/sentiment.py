@@ -53,6 +53,7 @@ from src.common import (  # noqa: E402
     set_seed,
     write_json,
 )
+from src.features import split_by_date  # noqa: E402
 
 LOG = get_logger("sentiment")
 
@@ -182,21 +183,44 @@ def fetch_news_finnhub(universe: list[str], start: str, end: str,
 
 
 def fetch_news(universe: list[str], start: str, end: str, cfg: dict) -> pd.DataFrame:
-    """Dispatch to the configured provider (Section 10.1 step 1)."""
-    scfg = cfg["sentiment"]
-    provider = scfg.get("provider", "finnhub")
-    api_key = os.environ.get(scfg.get("api_key_env", "FINNHUB_API_KEY"), "")
+    """Dispatch to the configured provider (Section 10.1 step 1).
 
-    if not api_key:
-        LOG.error("")
-        LOG.error("No API key: set %s to ingest news.", scfg.get("api_key_env"))
-        LOG.error("Section 10 requires timestamped financial news. The pipeline")
-        LOG.error("continues without sentiment features, and the with/without")
-        LOG.error("ablation is reported as NOT RUN rather than as a null result.")
-        return pd.DataFrame(columns=["Ticker", "Timestamp", "Headline", "Summary"])
+    With `provider: auto`, Finnhub is preferred whenever an API key is present,
+    because it is the provider the PRD implies. The GDELT fallback exists so
+    the with/without ablation in `run_ablation` can be *measured* rather than
+    reported NOT RUN forever: GDELT needs no key and has a real archive, which
+    yfinance's news feed does not. Whichever source is used is recorded in the
+    sentiment output so the report can name it - an ablation run on a different
+    corpus than the report implies would be a quiet misrepresentation.
+    """
+    scfg = cfg["sentiment"]
+    provider = scfg.get("provider", "auto")
+    api_key = os.environ.get(scfg.get("api_key_env", "FINNHUB_API_KEY"), "").strip()
+
+    if api_key and provider in ("finnhub", "auto"):
+        LOG.info("Provider: finnhub (API key present)")
+        return fetch_news_finnhub(universe, start, end, api_key)
 
     if provider == "finnhub":
-        return fetch_news_finnhub(universe, start, end, api_key)
+        # Explicitly pinned to Finnhub and no key: fail loudly rather than
+        # silently substituting a different corpus.
+        LOG.error("")
+        LOG.error("provider is pinned to `finnhub` but %s is not set.",
+                  scfg.get("api_key_env"))
+        return pd.DataFrame(columns=["Ticker", "Timestamp", "Headline", "Summary"])
+
+    if provider in ("gdelt", "auto"):
+        from src.sentiment_gdelt import fetch_news_gdelt
+
+        if not api_key:
+            LOG.warning("")
+            LOG.warning("No %s set - falling back to GDELT, which needs no key.",
+                        scfg.get("api_key_env"))
+            LOG.warning("This is a DEVIATION from the PRD's implied news source.")
+            LOG.warning("GDELT is a global wire-to-web index, not a curated")
+            LOG.warning("financial newswire, so coverage and relevance are lower.")
+        LOG.info("Provider: gdelt (no API key required)")
+        return fetch_news_gdelt(universe, start, end, cfg)
 
     raise ValueError(f"unsupported sentiment provider: {provider!r}")
 
@@ -318,6 +342,115 @@ def build_market_mood(daily: pd.DataFrame, cfg: dict) -> pd.DataFrame:
 # ==========================================================================
 # Ablation (Section 10.3 integration test)
 # ==========================================================================
+def run_ablation_selftest() -> dict:
+    """Prove the ablation harness works, using a synthetic sentiment block.
+
+    Why this exists. The ablation cannot run for real without a news API key,
+    and an untested experiment that is merely *written* is not evidence that it
+    will work. If the harness has a bug in its split, its feature selection, or
+    its delta arithmetic, that bug would surface only on the day a key is
+    supplied - and the number it produced would then be published.
+
+    So the harness is exercised here on a block of **synthetic** sentiment that
+    is built to be genuinely predictive of the target. A working harness must
+    detect that the with-sentiment arm is better, because it is. If it does not,
+    the harness is broken and this function says so.
+
+    What this is NOT: a sentiment result. The synthetic block is generated, not
+    fetched from news, so it says nothing about whether real headlines help. The
+    return value says so in a field the report and dashboard both read, and the
+    real ablation remains NOT RUN until a key exists.
+    """
+    from sklearn.ensemble import HistGradientBoostingRegressor
+    from sklearn.metrics import mean_absolute_error
+
+    from src.features import feature_columns
+
+    if not FEATURES.exists():
+        return {"status": "NOT RUN", "reason": "features.parquet missing"}
+
+    df = pd.read_parquet(FEATURES)
+    df["Date"] = pd.to_datetime(df["Date"])
+    base_cols = feature_columns(df)
+
+    LOG.info("")
+    LOG.info("")
+    LOG.info("Ablation HARNESS SELF-TEST (synthetic sentiment - not a result)")
+    LOG.info("-" * 74)
+
+    # Restrict to the test window so the synthetic block is large enough to
+    # train on, and build a sentiment feature that carries real signal: a
+    # noisy function of the target, i.e. something a competent model should be
+    # able to exploit. A harness that cannot find this is broken.
+    bounds = split_by_date(df["Date"], load_config())
+    dates = np.sort(bounds["test"])
+    if len(dates) < 60:
+        return {"status": "NOT RUN",
+                "reason": f"only {len(dates)} test sessions available"}
+    work = df[df["Date"].isin(dates)].sort_values(["Date", "Ticker"]).copy()
+
+    rng = np.random.default_rng(load_config().get("random_seed", 42))
+    y = work["Target"].to_numpy(dtype=float)
+    # 70% signal, 30% noise. Correlated with the target, not a copy of it.
+    work["Sentiment_Synthetic"] = 0.7 * y + 0.3 * rng.normal(scale=y.std(), size=len(y))
+    sent_cols = ["Sentiment_Synthetic"]
+
+    n = work["Date"].nunique()
+    cut = int(n * 0.70)
+    tr = work[work["Date"].isin(dates[:cut])]
+    te = work[work["Date"].isin(dates[cut:])]
+
+    arms = {}
+    for arm, use in (("without_sentiment", base_cols),
+                     ("with_sentiment", base_cols + sent_cols)):
+        used = [c for c in use if c in work.columns]
+        Xtr = tr[used].to_numpy(dtype=float)
+        Xte = te[used].to_numpy(dtype=float)
+        ytr = tr["Target"].to_numpy(dtype=float)
+        yte = te["Target"].to_numpy(dtype=float)
+        model = HistGradientBoostingRegressor(max_iter=300, random_state=42)
+        model.fit(Xtr, ytr)
+        pred = model.predict(Xte)
+        mae = float(mean_absolute_error(yte, pred))
+        mask = yte != 0
+        dir_acc = float(np.mean(np.sign(yte[mask]) == np.sign(pred[mask])))
+        arms[arm] = {"MAE": mae, "DirAcc": dir_acc, "n_features": len(used),
+                     "n_test": int(len(yte))}
+        LOG.info("  %-20s MAE=%.6f  DirAcc=%.2f%%  (%d features)",
+                 arm, mae, 100 * dir_acc, len(used))
+
+    d_mae = arms["with_sentiment"]["MAE"] - arms["without_sentiment"]["MAE"]
+    d_dir = arms["with_sentiment"]["DirAcc"] - arms["without_sentiment"]["DirAcc"]
+    # The harness works if it recovers the injected signal.
+    detected = d_mae < 0 and d_dir > 0
+    LOG.info("  delta MAE     : %+.6f (%s)", d_mae, "better" if d_mae < 0 else "worse")
+    LOG.info("  delta Dir.Acc : %+.2f pp", 100 * d_dir)
+    LOG.info("  HARNESS %s", "OK - it recovers an injected signal"
+             if detected else "BROKEN - it failed to recover an injected signal")
+    LOG.info("-" * 74)
+
+    return {
+        "status": "SELFTEST PASSED" if detected else "SELFTEST FAILED",
+        "is_a_sentiment_result": False,
+        "what_this_is": (
+            "A validation of the ablation harness, not a measurement of "
+            "sentiment. The sentiment column here is SYNTHETIC - generated from "
+            "the target with added noise - and carries no information about news. "
+            "It exists so the with/without comparison, the chronological split "
+            "and the delta arithmetic are proven to work before anyone relies on "
+            "a real number."
+        ),
+        "overlap_sessions": int(n),
+        "train_rows": int(len(tr)),
+        "test_rows": int(len(te)),
+        "arms": arms,
+        "delta_MAE": float(d_mae),
+        "delta_DirAcc": float(d_dir),
+        "harness_detected_injected_signal": bool(detected),
+        "real_ablation_status": "NOT RUN - no news API key",
+    }
+
+
 def run_ablation(daily: pd.DataFrame) -> dict:
     """Retrain the best forecaster with and without sentiment; report the delta.
 
@@ -483,6 +616,23 @@ def analyze_sentiment() -> dict:
 
     # -- integration test --------------------------------------------------
     ablation = run_ablation(daily)
+    # Record which corpus produced the measurement. The ablation is only
+    # interpretable alongside its source: a GDELT web-index result and a
+    # Finnhub newswire result answer the same question about different data, and
+    # a reader who cannot see which was used will over-read whichever number
+    # they find. Stated here so it travels with the artifact.
+    provider = ("finnhub" if os.environ.get(
+        scfg.get("api_key_env", "FINNHUB_API_KEY"), "").strip()
+        else "gdelt")
+    ablation["news_provider"] = provider
+    ablation["news_provider_note"] = (
+        "GDELT DOC 2.0, a keyless global wire-to-web index. It is a weaker "
+        "proxy for financial news than the curated newswire the PRD implies, "
+        "so a null result here is partly a statement about the corpus rather "
+        "than only about the model. Set FINNHUB_API_KEY to re-run against the "
+        "intended source."
+        if provider == "gdelt" else
+        "Finnhub company news, the provider the PRD implies.")
     write_json(ablation, SENTIMENT_ABLATION)
     LOG.info("")
     LOG.info("Ablation -> %s", SENTIMENT_ABLATION)

@@ -294,13 +294,13 @@
           "min_samples_leaf": 1
         },
         "fold_mae": [
-          0.009935877399684464,
+          0.009935877399684465,
           0.012144537065143195,
           0.01896920988942018,
           0.015338234852489245,
           0.012041766870465185
         ],
-        "mean_mae": 0.013685925215440453
+        "mean_mae": 0.013685925215440455
       },
       {
         "params": {
@@ -627,7 +627,7 @@
       "R2": -0.018643377942967332,
       "DirAcc": 0.5456581239114208,
       "N": 4030,
-      "MAPE_Return": 114.99016103919118,
+      "MAPE_Return": 114.9901610391912,
       "MAPE_Price": 1.0594156947155122,
       "MAPE": 1.0594156947155122,
       "Model": "RandomForest"
@@ -672,7 +672,7 @@
     },
     {
       "RMSE": 0.017639978716117756,
-      "MAE": 0.012306902254634247,
+      "MAE": 0.012306902254634246,
       "R2": 0.004702791800089368,
       "DirAcc": 0.5311801242236025,
       "N": 4050,
@@ -733,5 +733,5 @@
     "best_model_by_mae": "RandomForest",
     "note": "Reported honestly per Section 8.3. A model that cannot beat the random walk on both metrics is a failure and is reported as such."
   },
-  "elapsed_seconds": 1248.7
+  "elapsed_seconds": 993.3
 }

@@ -18,7 +18,9 @@
   "rebalance_band": 0.05,
   "sentiment_available": false,
   "distribution": {
-    "HOLD": 10
+    "BUY": 4,
+    "HOLD": 3,
+    "SELL": 3
   },
   "disclaimer": "Educational research and decision support only. Not financial advice.",
   "portfolio_beats_equal_weight": false

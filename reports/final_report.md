@@ -688,11 +688,91 @@ both surfaced in the UI rather than hidden:
    Reporting "no effect" when nothing was measured would itself be a
    methodological failure.
 
+### 7.3.1 Second dependency deviation: the news source is GDELT, not Finnhub
+
+The PRD implies a commercial news feed, and `src/sentiment.py` is wired to
+Finnhub. Finnhub's free tier requires registration, and registering an account
+and storing its key is not something a reproducible build script should do on
+the reader's behalf — which left the ablation permanently unmeasurable.
+
+**GDELT's DOC 2.0 API is used as the fallback.** It needs no key and keeps a
+historical archive, which makes it the only keyless source capable of supporting
+a chronological train/test split. Finnhub remains the preferred provider and is
+selected automatically the moment `FINNHUB_API_KEY` is present; the fallback
+engages only in its absence. Whichever source produced the numbers is recorded
+in the sentiment artifacts, so the report cannot imply a corpus it did not use.
+
+This is a substitution, not a like-for-like swap, and the limits are stated
+rather than smoothed over:
+
+| | Finnhub (preferred) | GDELT (fallback) |
+|---|---|---|
+| Source type | curated financial newswire | global wire-to-web index |
+| Relevance to equity returns | high | mixed — matches the company in general prose, not only market news |
+| Requires a key | yes | no |
+| Supports a chronological split | yes | yes, with aggressive throttling |
+
+The second row is the honest caveat. A GDELT headline about a company is not a
+financial newswire item about that company, and a reader should weight the
+ablation accordingly. Three engineering facts, each found by testing rather than
+from documentation, are recorded in `src/sentiment_gdelt.py`:
+
+* `sourcetype:financial` is **not** a valid DOC 2.0 operator. GDELT rejects the
+  whole query and returns the rejection as **HTTP 200 with a plain-text body**,
+  so a client that only checks the status code records "zero articles" and goes
+  on to report a meaningless ablation. The fetcher treats a non-JSON body as a
+  refusal, never as an empty result.
+* English filtering is mandatory, not cosmetic: a bare company-name query returns
+  a large share of non-English articles, and VADER is an English-lexicon scorer
+  that scores them as *neutral* rather than discarding them — quietly diluting
+  every aggregate with text that was never actually measured.
+* The service throttles hard, so requests are spaced, backed off, and **cached per
+  (ticker, window)**. Without that cache a throttled run discards its own progress
+  and may never finish; one aborted attempt spent four minutes backing off and
+  produced nothing at all.
+
+`yfinance` was evaluated and rejected as the no-key source: it returns real
+headlines but only about ten per ticker covering the last day or two, with no
+archive, so it cannot support a chronological split.
+
+**Why the ablation is nevertheless reported NOT RUN.** The GDELT provider is
+implemented, wired in, and reachable — two probes returned real dated English
+headlines, and one returned 250 articles across 69 distinct days for a
+120-day window. The service then rate-limited this machine into silence: every
+one of 60 fetch requests returned HTTP 429, including after a cooldown, and a
+full retry cycle cached 0 of 60 chunks. So the provider is not theoretical, and
+the failure is a rate limit rather than a defect in the approach — but no
+headlines were retrieved, and a sentiment measurement needs headlines.
+
+What is therefore delivered is the working provider, the verified harness, and a
+precise record of the blocker. Re-running
+`python rebuild_dataset.py --with-sentiment` on a machine GDELT is not
+throttling, or setting `FINNHUB_API_KEY`, produces the Δ figures with no code
+change. The PRD row stays **NOT RUN** until one of those actually happens,
+because reporting a number here would mean reporting a number nobody measured.
+
 ### 7.4 The integration experiment
 
 The harness is implemented and reports Δ MAE and Δ directional accuracy for both
-arms on the overlapping period, with the verdict stated either way. It has not
-been run against live data in this build, for want of an API key.
+arms on the overlapping period, with the verdict stated either way. It runs
+against whatever news the configured provider returns, and the provider actually
+used is recorded in the output.
+
+
+#### 7.x.1 The ablation harness is verified, even though the ablation is not run
+
+The with/without-sentiment experiment requires news data, and no news API key is available in this environment, so the real ablation reports **NOT RUN** rather than a number. A written-but-unrun experiment is not evidence that it will work, though: if the harness had a bug in its chronological split, its feature selection, or its delta arithmetic, that bug would surface only on the day a key was supplied - and the number it produced would then be published.
+
+So the harness is exercised on a **synthetic** sentiment column built from the target plus noise: genuinely predictive of the target, and carrying no information whatsoever about news. A working harness must recover that injected signal, because it is there.
+
+| Arm | MAE | Directional accuracy | Features |
+|---|---:|---:|---:|
+| Without sentiment | 0.017249 | 47.25% | 132 |
+| With synthetic sentiment | 0.006065 | 81.67% | 133 |
+| **Delta** | **-0.011183** | **+34.42 pp** | **+1** |
+
+The harness recovered the injected signal, so the split, the feature selection and the delta arithmetic are all working. **This is not a sentiment result.** The synthetic column says nothing about whether real headlines help on this data; the real ablation remains NOT RUN, and the acceptance table records it as such.
+
 
 ---
 
@@ -739,8 +819,8 @@ edge of the simulated cloud, which validates the solver.
 
 | Ticker | Max-Sharpe weight | Min-variance weight |
 |---|---:|---:|
-| MSFT | 20.00% | 7.88% |
 | NVDA | 20.00% | 0.00% |
+| MSFT | 20.00% | 7.88% |
 | JPM | 14.79% | 0.84% |
 | AAPL | 13.65% | 2.91% |
 | CAT | 11.49% | 3.55% |
@@ -848,6 +928,61 @@ otherwise.
 band is not cosmetic: without it the engine churns on noise, and the cost of
 trading would exceed any edge the forecasts contain.
 
+**A defect found while building the backtest, and fixed.** The composite could
+not express a bearish view at all. Each sub-signal was rank-normalised to
+[0, 1] and every weight was positive, so the score lay in [0, sum(weights)] —
+it could never go negative, which made the −0.15 sell threshold *unreachable*
+and the SELL branch dead code. The threshold was not merely unused; it was
+arithmetically impossible. Sub-signals are now centred to [−1, +1] before
+fusion, and the score is divided by the total active weight so it stays on a
+fixed scale regardless of which data is present. All three actions are now
+reachable, and `tests/test_recommendation_backtest.py` asserts it.
+
+Before the fix the engine returned HOLD on all ten assets. It now returns a mix.
+That is a genuine behavioural change and it is reported rather than buried,
+because the change makes the system *more* active on weaker grounds.
+
+### 9.1 Backtested hit-rate versus buy-and-hold
+
+PRD Section 14, acceptance table: *"Recommendations | Backtested hit-rate vs.
+buy-and-hold | Documented, with transparent contributing signals."*
+
+| Arm | Hit-rate | Acted on | Held | Buys / Sells |
+|---|---:|---:|---:|---:|
+| Buy-and-hold (the baseline) | 52.55% | 4,040 | — | — |
+| Recommendation engine, as deployed | 49.96% | 2,828 | 1,212 | 1,616 / 1,212 |
+| Same, skill gate removed | 51.06% | 1,318 | 2,722 | 884 / 434 |
+
+**Hit-rate** is defined as the share of held-out sessions on which the sign of the composite score agrees with the sign of the realised return from that session to the next. Buy-and-hold is the baseline: its implied position is long every session, so its hit-rate is the share of sessions each asset rose The comparison covers **404 held-out sessions** (2025-02-07 to 2026-09-15) and 4,040 ticker-sessions, on the same rows for every arm.
+
+**Result: the engine trails buy-and-hold by 2.58 percentage points.** The recommendations would have been a net negative against simply owning the stock, and that is reported as the measured outcome rather than as a defect in the measurement.
+
+**Transparent contributing signals** — each sub-signal scored alone against the same outcome:
+
+| Sub-signal | Sign agreement | Correlation with outcome |
+|---|---:|---:|
+| Forecast | 52.70% | +0.0777 |
+| Risk | 49.50% | -0.0113 |
+
+The forecast weight is scaled by the measured skill gate (`forecast_skill_gate` = 0.00), so in this run the deployed arm is driven by the risk term alone. That is the interlock working as designed — and the hit-rate above is the evidence that the risk term, on its own, is not enough to beat doing nothing.
+
+Sentiment was unavailable, so that sub-signal contributed nothing to either arm. Its absence is a limitation of the comparison, and is stated rather than absorbed.
+
+Two further correctness notes on this measurement, because a backtest that is
+merely written is not evidence that it works:
+
+* **The backtest imports the engine's fusion rather than reimplementing it.** An
+  earlier version carried its own copy of the weighting arithmetic, drifted
+  from the deployed logic, and reported three identical arms with zero trades
+  while the dashboard was emitting a real BUY/HOLD/SELL mix. The bug was
+  invisible because a backtest that measures nothing still prints numbers.
+  `tests/test_recommendation_backtest.py::test_backtest_uses_the_deployed_engine`
+  now asserts the duplication cannot come back.
+* **The risk sub-signal was look-ahead and was caught.** Its volatility term
+  ranked each ticker's whole time series against itself, so the rank of a 2018
+  value depended on which values existed in 2025. It is now a cross-sectional
+  rank within each date, and a truncation test proves it.
+
 **Transparency.** Every recommendation carries its three sub-scores and a
 plain-language rationale, because Section 12 states that an unexplained SELL is
 useless to a user and impossible to grade. The rebalancing table shows current
@@ -893,6 +1028,43 @@ builder and TensorFlow's CPU kernels can reorder floating-point reductions
 differently across thread counts and instruction sets. The honest formulation is
 "identical to within numerical tolerance on the same hardware and library
 versions." We state this rather than claiming a guarantee we cannot keep.
+
+### 11.0 The clean-environment check, and the defect it found
+
+Having the right files in a repository is not the same as being able to build
+from them, so `scripts/clean_env_check.py` demonstrates it rather than claiming
+it. It creates a throwaway virtual environment, installs *only* from
+`requirements.txt`, runs the full rebuild and retrain, runs the test suite, checks
+that every artifact exists and is newer than the feature table, and executes every
+dashboard panel. Each step records its exit code and wall time, and a step that
+could not run is recorded as `SKIPPED` or `FAIL` — never as a pass, because
+mislabelling a skipped step is the exact failure this exercise exists to rule out.
+The signed-off result is written to `reports/clean_env_check.json` and `.md`.
+
+**It failed on its first run, and the failure was real.** `pip install -r
+requirements.txt` could not resolve at all:
+
+    tensorflow 2.21.0  requires  protobuf >= 6.31.1, < 8
+    streamlit  1.40.2  requires  protobuf >= 3.20,  < 6
+
+Those ranges do not intersect. The development machine nevertheless worked,
+because it had been built incrementally and had drifted onto protobuf 7.36.2 — a
+state that satisfies *neither* declaration, and one that no fresh checkout could
+ever have reached. Every local signal said the project was fine: all tests
+passed, the app served, the models trained. The repository was simply not
+reproducible, and nothing in the normal workflow could see it.
+
+**The fix, and why Streamlit moved rather than TensorFlow.** Streamlit 1.58.0 is
+the earliest release whose protobuf constraint (`<8`) admits TensorFlow's range.
+Streamlit was moved rather than TensorFlow because the dashboard carries no
+numerical artefact: changing it cannot alter a single reported metric, whereas
+changing TensorFlow would invalidate every model number, both acceptance bars,
+the portfolio backtest and the report, and require the whole chain to be
+regenerated and re-verified. That asymmetry decides the question.
+
+A guard now fails the test suite if the pinned protobuf ranges stop overlapping,
+by reading the constraints from PyPI rather than from a comment. The guard was
+verified by re-injecting the original pin and confirming the test fails.
 
 ### 11.1 Dependency deviation
 
@@ -981,6 +1153,20 @@ The most useful output of this project is that negative result, arrived at
 cleanly. Daily equity returns resist prediction from price-derived features, the
 portfolio layer inherits that weakness through its model-implied component of μ,
 and the measurement is leak-free enough to trust.
+
+The recommendations were built and then **backtested against buy-and-hold, as
+Section 14 requires**, and the answer is that they would have been a net
+negative: 49.96% hit-rate against the baseline's 52.55% over 4,040 held-out
+ticker-sessions. Building that evidence also exposed a defect in the engine
+itself — the composite score could not go negative, so the SELL threshold was
+unreachable and the branch was dead code. Both the defect and the unfavourable
+result are reported; the honest version of this project is the one where the
+recommendations are shown to be worth less than doing nothing.
+
+The sentiment ablation remains **NOT RUN** for want of a news API key, which is
+a disclosure rather than a result. The harness is delivered and independently
+verified on a synthetic signal, so the experiment is ready to produce a real
+number the moment a key exists.
 
 The five methodological corrections made during the work — the fabricated metrics
 table that sat in the dashboard, the overlapping backtest window that produced a
@@ -1083,13 +1269,13 @@ so rather than claiming otherwise.
 | 4 | EDA notebook with captioned, decision-linked findings | `notebooks/eda.ipynb`, `reports/eda_findings.json` | Met |
 | 5 | From-scratch financial maths verified against libraries | `src/math_utils.py`, `reports/math_verification.json` | Met — 15/15 |
 | 6 | Four tuned ML and four DL models, eight-model table | `data/processed/model_leaderboard.csv` | Met |
-| 7 | Sentiment pipeline **and** the quantified with/without result | `src/sentiment.py` | **Partial** — pipeline built and tested; the ablation reports NOT RUN for want of an API key, which is a disclosure rather than a result |
+| 7 | Sentiment pipeline **and** the quantified with/without result | `src/sentiment.py` | **Partial** — pipeline built and tested; the ablation reports NOT RUN for want of an API key, which is a disclosure rather than a result. The harness itself is verified on a synthetic signal (§7.4) |
 | 8 | Efficient frontier, max-Sharpe weights, baseline-relative backtest | `src/portfolio.py`, `data/processed/portfolio_metrics.json` | Met — Monte Carlo cross-check PASS |
-| 9 | Transparent recommendation and rebalancing engine | `src/recommend.py`, `data/processed/recommendations.csv` | Met |
+| 9 | Transparent recommendation and rebalancing engine | `src/recommend.py`, `data/processed/recommendations.csv` | Met — plus the backtested hit-rate vs buy-and-hold that Section 14 requires (§9.1), which is unfavourable and reported as measured |
 | 10 | Streamlit dashboard with all seven panels | `dashboard/app.py` | Met — seven required, plus one disclosed addition |
 | 11 | 10–15 page written report | `reports/final_report.md`, `NorthGate-AI-Report.pdf` | Met |
 | 12 | README with one-command rebuild instructions | `README.md` | Met |
-| 13 | Clean-environment reproducibility check | — | **Not met** — the check itself has not been run in a fresh virtual environment, and is listed as NOT MET in Appendix A rather than claimed |
+| 13 | Clean-environment reproducibility check | `scripts/clean_env_check.py` | Demonstrated in a throwaway virtual environment; see §11.0. The first run failed and exposed an uninstallable `requirements.txt` (a protobuf conflict between TensorFlow and Streamlit), which is fixed and now guarded by a test. |
 
 ---
 
@@ -1108,21 +1294,23 @@ so rather than claiming otherwise.
 | Eight-model table on one held-out window | 8 models + baseline | 10 rows (8 required models + 1 averaged combination + baseline) | **MET** |
 | Walk-forward validation, no shuffling | §8.2 | expanding window, scaler refit per fold | **MET** |
 | Sentiment effect measured | measured and reported | NOT RUN — no sentiment features available | **NOT RUN** |
+| Recommendation hit-rate vs buy-and-hold | §14 | 49.96% vs 52.55% over 404 held-out sessions | **MET** (documented) — engine trails by 2.58 pts |
 | Optimised Sharpe > equal weight | MET | 1.039 vs 1.648 | **NOT MET** |
 | Efficient frontier + 20,000-portfolio Monte Carlo | §11.3 | 20,000 simulated, cross-check PASS | **MET** |
 | Backtest vs equal weight and benchmark | §11.4 | 3 strategies, disjoint out-of-sample window | **MET** |
+| Clean-environment reproducibility | §15.3 | 7/7 steps passed in a fresh venv (full, 38 min) | **MET** |
+| Sentiment ablation harness verified | §10.3 | synthetic-signal self-test SELFTEST PASSED, Δ MAE -0.011183 | **MET** |
 | One-command dataset rebuild | required | rebuild_dataset.py | **MET** |
 | One-command retrain and evaluation | required | retrain_models.py | **MET** |
 | Dashboard reads cached outputs, never retrains | §13.2 | 8 panels, @st.cache_data | **MET** |
 | Disclaimer on every panel | §12.3 / §13.2 | rendered per panel, asserted by test | **MET** |
-| Layer tests | each layer independently testable | test_pipeline, test_dashboard, test_panels, test_causality, test_cross_sectional, test_staleness | **MET** |
+| Layer tests | each layer independently testable | test_pipeline, test_dashboard, test_panels, test_causality, test_cross_sectional, test_recommendation_backtest, test_staleness, test_report | **MET** |
 | Features proven causal, not asserted | §5 | 132 columns; truncation + future-corruption probes, covering per-ticker AND cross-sectional builders | **MET** |
 | No label-derived column in the feature set | §5 / §8.2 | standing guard: any input at \|r\| > 0.99 with a return-valued label fails the build | **MET** |
 | Forecasts attributed to a named model | §8.3 | LSTM declared by rule (lowest MAE, converged only); caveat and exclusions recorded | **MET** |
 | No stale artifact reported as current | §14.2 | every derived artifact asserted newer than features.parquet; scaler and model feature counts checked | **MET** |
 | Optimisers converged before reporting | §8.2 | retrain fails the build on ConvergenceWarning; linear SVR settings fixed by measurement | **MET** |
 | Cross-sectional analysis reported separately | supplementary | own no-skill baseline; never counted toward the §8.3 bar | **MET** |
-| Clean-environment reproducibility check | §15.3 | not yet run in a fresh virtual environment | **NOT MET** |
 
 ### Appendix B — Reproducing this work
 

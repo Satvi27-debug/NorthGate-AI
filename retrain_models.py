@@ -347,6 +347,14 @@ def main() -> int:
     results["recommend"] = run_stage("recommend", "src/recommend.py",
                                      "Section 12 signal fusion and recommendations",
                                      optional=True)
+    # PRD Section 14 acceptance row "Recommendations": backtested hit-rate vs
+    # buy-and-hold. Optional because it is evidence about the engine, not part
+    # of producing it - but it runs whenever `recommend` succeeded.
+    if results.get("recommend"):
+        results["rec_backtest"] = run_stage(
+            "recommendation_backtest", "src/recommendation_backtest.py",
+            "Section 14 backtested recommendation hit-rate vs buy-and-hold",
+            optional=True)
 
     build_leaderboard()
 

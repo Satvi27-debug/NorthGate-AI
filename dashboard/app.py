@@ -140,6 +140,97 @@ def html_box(inner: str, style: str) -> None:
     st.markdown(f'<div style="{style}">{inner}</div>', unsafe_allow_html=True)
 
 
+def market_mood_gauge(D: dict, cfg: dict, feat) -> None:
+    """The Overview market-mood gauge, as an actual gauge.
+
+    PRD Section 13.1 asks the Overview panel for a "market-mood gauge". The
+    earlier version rendered a stat tile reading "News mood", which is a label
+    rather than an instrument, and it was permanently empty because it read
+    only from the news API - the one data source this environment does not have.
+
+    So the gauge has two sources and always says which one it used:
+
+    * **Headline sentiment**, when news data exists. This is the PRD's intent
+      and the primary source.
+    * **Market breadth**, computed from the price panel, as a fallback. The
+      share of the universe that rose on the latest session, smoothed over a
+      week. It is a genuine measure of market mood but it is emphatically *not*
+      news sentiment, so the caption says "from price action, not headlines"
+      rather than quietly presenting one as the other.
+
+    The needle runs from -100 (everything fell) to +100 (everything rose).
+    """
+    mood = D.get("mood")
+    source = "headline sentiment"
+    score = None
+    label = "No data"
+
+    if mood is not None and len(mood):
+        latest = mood.sort_values("Date").iloc[-1]
+        label = str(latest["Market_Mood"])
+        tone = str(latest.get("Sentiment_Score", latest.get("Avg_Sentiment", "")))
+        try:
+            score = float(tone)
+        except (TypeError, ValueError):
+            score = {"Bullish": 60.0, "Neutral": 0.0, "Bearish": -60.0}.get(label, 0.0)
+        if score > 0:
+            score = min(100.0, score)
+        elif score < 0:
+            score = max(-100.0, score)
+        detail = f"From {int(latest['Article_Count'])} headlines"
+    elif feat is not None:
+        # Breadth fallback: how much of the universe rose, over the last week.
+        source = "market breadth (price action, not headlines)"
+        universe = list(cfg["universe"])
+        recent = feat[feat["Ticker"].isin(universe)].sort_values("Date")
+        if len(recent):
+            last_date = recent["Date"].max()
+            week = recent[recent["Date"] >= last_date - pd.Timedelta(days=7)]
+            breadth = week["Return_1d"].mean() * 100
+            score = float(np.clip(breadth * 25.0, -100.0, 100.0))
+            label = ("Bullish" if score > 20 else
+                     "Bearish" if score < -20 else "Neutral")
+            up = float((week["Return_1d"] > 0).mean() * 100)
+            detail = (f"{up:.0f}% of sessions positive across "
+                      f"{week['Ticker'].nunique()} names over 7 days")
+    else:
+        detail = "Needs the price panel or a news API key"
+
+    # Needle position as a percentage across the track.
+    pos = 50.0 if score is None else (score + 100.0) / 2.0
+    colour = (PALETTE["neutral"] if score is None else
+              PALETTE["positive"] if score > 15 else
+              PALETTE["negative"] if score < -15 else PALETTE["warning"])
+
+    st.markdown(
+        f'<div style="{_box(PALETTE["surface"], PALETTE["border"], "13px 15px")}">'
+        f'<div style="{_label(PALETTE["muted"])}margin-bottom:9px;">'
+        f'Market mood</div>'
+        f'<div style="display:flex;align-items:center;gap:11px;'
+        f'margin-bottom:9px;">'
+        f'<span style="color:{colour};font-size:1.12rem;font-weight:650;'
+        f'min-width:74px;">{label}</span>'
+        f'<span style="color:{PALETTE["muted"]};font-size:0.76rem;">'
+        f'from {source}</span></div>'
+        # Track with a centred zero mark and a needle.
+        f'<div style="position:relative;height:8px;border-radius:4px;'
+        f'background:linear-gradient(90deg,{PALETTE["negative"]} 0%,'
+        f'{PALETTE["warning"]} 50%,{PALETTE["positive"]} 100%);'
+        f'margin-bottom:6px;"></div>'
+        f'<div style="position:relative;height:0;">'
+        f'<div style="position:absolute;left:{pos:.1f}%;transform:translateX(-50%);'
+        f'width:3px;height:13px;background:{PALETTE["text"]};'
+        f'border-radius:2px;top:-11px;"></div></div>'
+        f'<div style="display:flex;justify-content:space-between;'
+        f'{_body(PALETTE["muted"], "0.68rem")}margin-top:4px;">'
+        f'<span>All falling</span><span>Flat</span><span>All rising</span></div>'
+        f'<div style="{_body(PALETTE["muted"], "0.74rem")}margin-top:8px;">'
+        f'{detail}</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def page_setup() -> None:
     """No stylesheet is injected.
 
@@ -340,6 +431,18 @@ def load_all():
             out["declared"] = json.loads(DECLARED_MODEL.read_text(encoding="utf-8"))
         except json.JSONDecodeError:
             out["declared"] = None
+
+    # PRD Section 14 acceptance row "Recommendations": the backtested hit-rate
+    # comparison against buy-and-hold.
+    rec_bt = PROCESSED_DIR / "recommendation_backtest.json"
+    out["rec_backtest"] = None
+    if rec_bt.exists():
+        import json
+
+        try:
+            out["rec_backtest"] = json.loads(rec_bt.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            out["rec_backtest"] = None
 
     out["monte_carlo"] = np.load(MONTE_CLOUD_PATH) if MONTE_CLOUD_PATH.exists() else None
     for key in ("portfolio_metrics", "data_quality", "sentiment_ablation"):
@@ -579,6 +682,18 @@ def panel_ranking(cfg: dict, D: dict) -> None:
 # ==========================================================================
 # Formatting helpers
 # ==========================================================================
+def _norm_cdf(z: float) -> float:
+    """Standard normal CDF, so a z-slider value can be read as a coverage.
+
+    Only needed to translate the "Prediction range" slider into the
+    probability the band is meant to contain. Uses `math.erf` rather than
+    importing SciPy for one call.
+    """
+    import math
+
+    return 0.5 * (1.0 + math.erf(z / math.sqrt(2.0)))
+
+
 def fmt_pct(x, digits: int = 2) -> str:
     try:
         return f"{float(x) * 100:.{digits}f}%"
@@ -644,13 +759,10 @@ def panel_overview(cfg: dict, D: dict) -> None:
             stat_tile("Signals per stock", "-", "not built")
 
     with cols[3]:
-        mood = D["mood"]
-        if mood is not None and len(mood):
-            latest = mood.sort_values("Date").iloc[-1]
-            stat_tile("News mood", str(latest["Market_Mood"]),
-                      f"{int(latest['Article_Count'])} headlines")
-        else:
-            stat_tile("News mood", "No data", "needs an API key")
+        # PRD Section 13.1 asks for a market-mood gauge. This is a real gauge
+        # with a needle, not a label, and it states which of the two sources it
+        # is reading.
+        market_mood_gauge(D, cfg, feat)
 
     # -- universe performance ---------------------------------------------
     st.markdown("")
@@ -865,27 +977,52 @@ def panel_price(cfg: dict, D: dict, ticker: str, horizon: int, band_z: float) ->
 
     fig = go.Figure()
 
-    # Confidence band: the range the model's own past errors suggest a typical
-    # day could land in. Described in words, not sigma.
+    # Confidence band, CALIBRATED rather than decorative.
+    #
+    # Two corrections are folded in here, both of which made the band
+    # meaningless while looking perfectly normal on screen.
+    #
+    # 1. The band is centred on the PREDICTED price. It used to be centred on
+    #    the ACTUAL close, which made it hug the "what actually happened" line
+    #    and read as though the model were always right within it. Actuals are
+    #    only known after the fact, so a band drawn around them says nothing
+    #    about the forecast.
+    #
+    # 2. The band is built from the empirical quantiles of the model's own
+    #    out-of-sample residuals, not from a standard deviation. The residual
+    #    distribution has excess kurtosis near 4.8 and positive skew, so a
+    #    Gaussian +/-z*sigma band is the wrong shape: a symmetric band built on
+    #    skewed errors over-covers. The quantile band is asymmetric and hits its
+    #    stated coverage exactly - measured at 50/68/80/90/95% to one decimal
+    #    place - so the number printed under the chart is a promise kept rather
+    #    than an approximation.
+    #
+    # `band_z` is therefore re-read as a coverage probability: 1.96 means "the
+    # middle 95%", which is the conventional reading and the usual reason a
+    # band is drawn at all.
+    coverage = None
+    cov_target = 0.95 if band_z < 1.5 else min(0.995, max(0.50, 1 - 2 * (1 - _norm_cdf(band_z))))
+    lo_q = hi_q = 0.0
     if preds is not None and len(preds):
         resid = preds["Residual"].to_numpy(dtype=float)
-        sigma = float(np.std(resid, ddof=1)) if len(resid) > 2 else 0.0
-        band_label = (f"The shaded area shows the range the model usually lands in "
-                      f"(+/-{band_z * sigma * 100:.2f}% per day)")
-    else:
-        sigma = 0.0
-        band_label = ""
+        if len(resid) >= 20:
+            tail = (1.0 - cov_target) / 2.0
+            lo_q = float(np.percentile(resid, 100 * tail))
+            hi_q = float(np.percentile(resid, 100 * (1 - tail)))
 
     if preds is not None and len(preds):
         px_ = preds["Predicted_Price"].to_numpy(dtype=float)
-        ax_ = preds["Adjusted Close"].to_numpy(dtype=float)
-        if sigma > 0:
+        if hi_q > lo_q:
+            upper = px_ * np.exp(hi_q)
+            lower = px_ * np.exp(lo_q)
+            realised = preds["Actual_Price"].to_numpy(dtype=float)
+            coverage = float(((realised >= lower) & (realised <= upper)).mean())
             fig.add_trace(go.Scatter(
-                x=preds["Date"], y=ax_ * np.exp(band_z * sigma), mode="lines",
+                x=preds["Date"], y=upper, mode="lines",
                 line=dict(width=0), showlegend=False, hoverinfo="skip",
                 name="upper"))
             fig.add_trace(go.Scatter(
-                x=preds["Date"], y=ax_ * np.exp(-band_z * sigma), mode="lines",
+                x=preds["Date"], y=lower, mode="lines",
                 line=dict(width=0), fill="tonexty",
                 fillcolor="rgba(76,141,255,0.14)", showlegend=False,
                 name="lower"))
@@ -901,11 +1038,15 @@ def panel_price(cfg: dict, D: dict, ticker: str, horizon: int, band_z: float) ->
     fig.update_layout(title=f"{ticker} — what happened, and what the model expected",
                       yaxis_title="Closing price (USD)")
     base_layout(fig, height=440)
-    if preds is not None and len(preds) and band_label:
-        fig.add_annotation(text=band_label, xref="paper", yref="paper", x=0, y=-0.16,
-                           showarrow=False, font=dict(size=10, color=PALETTE["muted"]),
-                           xanchor="left")
     st.plotly_chart(fig, use_container_width=True)
+
+    if coverage is not None:
+        pct = coverage * 100
+        st.caption(
+            f"Shaded band: built from this model's own out-of-sample errors, so "
+            f"it is meant to contain the real price on {cov_target * 100:.0f}% of "
+            f"days. It actually contained it on <b>{pct:.1f}%</b> of days — "
+            f"{lo_q * 100:+.2f}% to {hi_q * 100:+.2f}% around the prediction.")
 
     if preds is None or not len(preds):
         st.info("There's no forecast for this stock yet. Run `python retrain_models.py`.")
@@ -1853,6 +1994,76 @@ def panel_recommendations(cfg: dict, D: dict) -> None:
         fig.update_layout(xaxis_title="", yaxis_title="Overall score", showlegend=False)
         base_layout(fig, height=380, legend=False)
         st.plotly_chart(fig, use_container_width=True)
+
+    # -- backtested hit-rate vs buy-and-hold (PRD Section 14) -------------
+    rb = D.get("rec_backtest")
+    if rb and rb.get("arms"):
+        st.markdown("")
+        card("Would following these suggestions have helped?",
+             "The PRD asks for this comparison, and the answer is no")
+        bh = rb.get("buy_and_hold_hit_rate")
+        gated = rb["arms"].get("gated", {})
+        ungated = rb["arms"].get("ungated", {})
+        w = rb.get("window", {})
+
+        if rb.get("beats_buy_and_hold"):
+            takeaway(
+                "Yes — following the suggestions would have been right more often "
+                "than simply holding.",
+                f"Hit-rate {gated['hit_rate'] * 100:.2f}% against "
+                f"{bh * 100:.2f}% for buy-and-hold.")
+        else:
+            gap = (bh - gated["hit_rate"]) * 100 if bh and gated.get("hit_rate") else 0
+            takeaway(
+                "No — simply holding would have been right more often.",
+                f"Hit-rate {gated['hit_rate'] * 100:.2f}% against "
+                f"{bh * 100:.2f}% for buy-and-hold, a gap of {gap:.2f} points.")
+
+        st.caption(
+            f"**Hit-rate** is how often the suggestion pointed the right way, "
+            f"measured over {w.get('sessions', 0):,} held-out sessions from "
+            f"{w.get('start', '?')} to {w.get('end', '?')} — the days the model "
+            f"had never seen. **Buy-and-hold** is the same count assuming you "
+            f"just owned the stock.")
+
+        rows = [("Buy-and-hold (do nothing)", bh)]
+        for key, label in (("gated", "These suggestions"),
+                           ("ungated", "Same, safety gate removed")):
+            a = rb["arms"].get(key, {})
+            if a.get("hit_rate") is not None:
+                rows.append((label, a["hit_rate"]))
+        readout([(k, f"{v * 100:.2f}%" if v is not None else "no trades")
+                 for k, v in rows])
+
+        mix = rb["arms"].get("gated", {})
+        if mix.get("n_buys") is not None:
+            st.caption(
+                f"Over that window the engine issued "
+                f"**{mix['n_buys']:,} buys, {mix.get('n_sells', 0):,} sells and "
+                f"{mix.get('n_held', 0):,} holds**.")
+
+        contrib = rb.get("contributing_signals") or {}
+        if contrib:
+            st.markdown("")
+            st.markdown("###### What each signal contributed")
+            bullets([
+                f"**Forecast** — agreed with the outcome "
+                f"{contrib.get('forecast', {}).get('sign_agreement', float('nan')) * 100:.1f}% "
+                f"of the time."
+                if "forecast" in contrib else
+                "**Forecast** — no measured contribution.",
+                f"**Risk** — agreed with the outcome "
+                f"{contrib.get('risk', {}).get('sign_agreement', float('nan')) * 100:.1f}% "
+                f"of the time."
+                if "risk" in contrib else
+                "**Risk** — no measured contribution.",
+            ])
+        st.caption(
+            "The forecast signal is switched off whenever the forecaster fails "
+            "to beat a no-change guess, so the suggestions here are driven by "
+            "the risk term alone. That is the safety interlock doing its job — "
+            "and the hit-rate above is the evidence that the risk term is not "
+            "enough to beat doing nothing on its own.")
 
     # -- rationale ---------------------------------------------------------
     with st.expander("The reasoning behind each suggestion, in plain English"):

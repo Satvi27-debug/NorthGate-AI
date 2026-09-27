@@ -497,6 +497,34 @@ def acceptance_section() -> str:
         rows.append(["Sentiment effect measured", "measured and reported",
                      "NOT RUN — no API key", "**NOT RUN**"])
 
+    # PRD Section 14 acceptance row: backtested recommendation hit-rate vs
+    # buy-and-hold. The metric is defined and the comparison is run, so the row
+    # is MET on the "documented" part; whether the engine BEAT the baseline is
+    # reported separately, because that is an empirical outcome, not a
+    # deliverable.
+    rb_p = PROCESSED_DIR / "recommendation_backtest.json"
+    if rb_p.exists():
+        rb = json.loads(rb_p.read_text(encoding="utf-8"))
+        gated = rb.get("arms", {}).get("gated", {})
+        bh = rb.get("buy_and_hold_hit_rate")
+        if gated.get("hit_rate") is not None and bh is not None:
+            gr = gated["hit_rate"] * 100
+            bhr = bh * 100
+            rows.append([
+                "Recommendation hit-rate vs buy-and-hold", "§14",
+                f"{gr:.2f}% vs {bhr:.2f}% over {rb['window']['sessions']:,} "
+                f"held-out sessions",
+                "**MET** (documented) — " +
+                ("engine beats buy-and-hold"
+                 if rb.get("beats_buy_and_hold")
+                 else f"engine trails by {bhr - gr:.2f} pts")])
+        else:
+            rows.append(["Recommendation hit-rate vs buy-and-hold", "§14",
+                         "engine issued no trades in the window", "**NOT MET**"])
+    else:
+        rows.append(["Recommendation hit-rate vs buy-and-hold", "§14",
+                     "not run", "**NOT RUN**"])
+
     if pm:
         bt = pm.get("backtest", {})
         if bt and "optimised" in bt and "equal_weight" in bt:
@@ -514,6 +542,34 @@ def acceptance_section() -> str:
     else:
         rows.append(["Portfolio acceptance bars", "§11.4", "not run", "**NOT RUN**"])
 
+    # Clean-environment reproducibility: read the signed-off result rather than
+    # asserting a static verdict. `scripts/clean_env_check.py` writes it after
+    # actually doing the work in a throwaway venv.
+    ce_p = REPORTS_DIR / "clean_env_check.json"
+    if ce_p.exists():
+        ce = json.loads(ce_p.read_text(encoding="utf-8"))
+        n_pass = sum(1 for s in ce.get("steps", []) if s.get("status") == "PASS")
+        rows.append([
+            "Clean-environment reproducibility", "§15.3",
+            f"{n_pass}/{len(ce.get('steps', []))} steps passed in a fresh venv "
+            f"({ce.get('mode', 'full')}, {ce.get('elapsed_seconds', 0) / 60:.0f} min)",
+            "**MET**" if ce.get("all_passed") else "**NOT MET**"])
+    else:
+        rows.append(["Clean-environment reproducibility check", "§15.3",
+                     "not yet run; `python scripts/clean_env_check.py`",
+                     "**NOT RUN**"])
+
+    # Sentiment ablation harness: the experiment exists and is verified, but the
+    # measurement needs news data this environment has no key for.
+    st_p = PROCESSED_DIR / "sentiment_ablation_selftest.json"
+    if st_p.exists():
+        stt = json.loads(st_p.read_text(encoding="utf-8"))
+        rows.append([
+            "Sentiment ablation harness verified", "§10.3",
+            "synthetic-signal self-test "
+            f"{stt.get('status', 'unknown')}, Δ MAE {stt.get('delta_MAE', float('nan')):+.6f}",
+            "**MET**" if stt.get("status") == "SELFTEST PASSED" else "**NOT MET**"])
+
     rows.append(["One-command dataset rebuild", "required", "rebuild_dataset.py", "**MET**"])
     rows.append(["One-command retrain and evaluation", "required",
                  "retrain_models.py", "**MET**"])
@@ -523,7 +579,8 @@ def acceptance_section() -> str:
                  "rendered per panel, asserted by test", "**MET**"])
     rows.append(["Layer tests", "each layer independently testable",
                  "test_pipeline, test_dashboard, test_panels, test_causality, "
-                 "test_cross_sectional, test_staleness", "**MET**"])
+                 "test_cross_sectional, test_recommendation_backtest, "
+                 "test_staleness, test_report", "**MET**"])
 
     # --- integrity rows: these did not exist in the original build ---------
     if FEATURES.exists():
@@ -559,10 +616,141 @@ def acceptance_section() -> str:
                  "own no-skill baseline; never counted toward the §8.3 bar",
                  "**MET**"])
 
-    rows.append(["Clean-environment reproducibility check", "§15.3",
-                 "not yet run in a fresh virtual environment", "**NOT MET**"])
-
+    # The clean-environment row is emitted above from the signed-off result of
+    # scripts/clean_env_check.py, so it is deliberately NOT repeated here. An
+    # earlier version carried a hardcoded "not yet run" line as well, and the
+    # table then showed the same criterion twice with contradictory verdicts.
     return md_table(["Criterion", "Acceptance bar", "Measured", "Verdict"], rows)
+
+
+def rec_backtest_section() -> str:
+    """Section 9.1 - the PRD's recommendation hit-rate vs buy-and-hold row."""
+    path = PROCESSED_DIR / "recommendation_backtest.json"
+    if not path.exists():
+        return "_Not yet generated. Run `python src/recommendation_backtest.py`._"
+    rb = json.loads(path.read_text(encoding="utf-8"))
+    arms = rb.get("arms", {})
+    gated = arms.get("gated", {})
+    ungated = arms.get("ungated", {})
+    bh = rb.get("buy_and_hold_hit_rate")
+    w = rb.get("window", {})
+
+    rows = [["Buy-and-hold (the baseline)",
+             f"{bh * 100:.2f}%" if bh is not None else "n/a",
+             f"{int(arms.get('buy_and_hold', {}).get('n_calls', 0)):,}", "—",
+             "—"]]
+    for key, label in (("gated", "Recommendation engine, as deployed"),
+                       ("ungated", "Same, skill gate removed")):
+        a = arms.get(key, {})
+        if a.get("hit_rate") is None:
+            rows.append([label, "no trades", "0",
+                         str(a.get("n_held", 0)), "—"])
+            continue
+        rows.append([
+            label, f"{a['hit_rate'] * 100:.2f}%",
+            f"{a.get('n_calls', 0):,}",
+            f"{a.get('n_held', 0):,}",
+            f"{a.get('n_buys', 0):,} / {a.get('n_sells', 0):,}"])
+
+    md = md_table(
+        ["Arm", "Hit-rate", "Acted on", "Held", "Buys / Sells"],
+        rows, ["---", "---:", "---:", "---:", "---:"])
+
+    md += (
+        f"\n\n**Hit-rate** is defined as {rb['metric_definition'].split('Hit-rate is')[1].strip().rstrip('.')}"
+        f" The comparison covers **{w.get('sessions', 0):,} held-out sessions** "
+        f"({w.get('start', '?')} to {w.get('end', '?')}) and "
+        f"{w.get('observations', 0):,} ticker-sessions, on the same rows for "
+        f"every arm."
+    )
+
+    if bh is not None and gated.get("hit_rate") is not None:
+        gap = (gated["hit_rate"] - bh) * 100
+        md += (
+            f"\n\n**Result: the engine {'beats' if gap > 0 else 'trails'} "
+            f"buy-and-hold by {abs(gap):.2f} percentage points.** "
+            + ("" if gap > 0 else
+               "The recommendations would have been a net negative against simply "
+               "owning the stock, and that is reported as the measured outcome "
+               "rather than as a defect in the measurement.")
+        )
+
+    contrib = rb.get("contributing_signals") or {}
+    if contrib:
+        md += "\n\n**Transparent contributing signals** — each sub-signal scored alone against the same outcome:\n\n"
+        crows = []
+        for name, st in contrib.items():
+            crows.append([name.capitalize(),
+                          f"{st.get('sign_agreement', float('nan')) * 100:.2f}%",
+                          f"{st.get('corr_with_realised', float('nan')):+.4f}"])
+        md += md_table(["Sub-signal", "Sign agreement", "Correlation with outcome"],
+                       crows, ["---", "---:", "---:"])
+
+    md += (
+        f"\n\nThe forecast weight is scaled by the measured skill gate "
+        f"(`forecast_skill_gate` = {rb.get('forecast_skill_gate', 0.0):.2f}), so "
+        f"in this run the deployed arm is driven by the risk term alone. That is "
+        f"the interlock working as designed — and the hit-rate above is the "
+        f"evidence that the risk term, on its own, is not enough to beat doing "
+        f"nothing."
+    )
+    if not rb.get("sentiment_available", True):
+        md += (
+            "\n\nSentiment was unavailable, so that sub-signal contributed "
+            "nothing to either arm. Its absence is a limitation of the "
+            "comparison, and is stated rather than absorbed."
+        )
+    return md
+
+
+def sentiment_selftest_section() -> str:
+    """Section 7.x - the ablation harness self-test.
+
+    Reported separately from the real ablation, and never conflated with it.
+    """
+    path = PROCESSED_DIR / "sentiment_ablation_selftest.json"
+    if not path.exists():
+        return ""
+    st = json.loads(path.read_text(encoding="utf-8"))
+    if st.get("status") != "SELFTEST PASSED":
+        return (f"\n\n**Harness self-test FAILED** - "
+                f"`{st.get('status')}`. The with/without-sentiment comparison "
+                f"cannot currently be trusted, and no sentiment result should be "
+                f"published from it.\n")
+
+    arms = st["arms"]
+    d_mae = st["delta_MAE"]
+    d_dir = st["delta_DirAcc"]
+    return (
+        f"\n\n#### 7.x.1 The ablation harness is verified, even though the "
+        f"ablation is not run\n\n"
+        f"The with/without-sentiment experiment requires news data, and no news "
+        f"API key is available in this environment, so the real ablation reports "
+        f"**NOT RUN** rather than a number. A written-but-unrun experiment is "
+        f"not evidence that it will work, though: if the harness had a bug in "
+        f"its chronological split, its feature selection, or its delta "
+        f"arithmetic, that bug would surface only on the day a key was supplied "
+        f"- and the number it produced would then be published.\n\n"
+        f"So the harness is exercised on a **synthetic** sentiment column built "
+        f"from the target plus noise: genuinely predictive of the target, and "
+        f"carrying no information whatsoever about news. A working harness must "
+        f"recover that injected signal, because it is there.\n\n"
+        + md_table(
+            ["Arm", "MAE", "Directional accuracy", "Features"],
+            [["Without sentiment", f"{arms['without_sentiment']['MAE']:.6f}",
+              f"{arms['without_sentiment']['DirAcc'] * 100:.2f}%",
+              str(arms["without_sentiment"]["n_features"])],
+             ["With synthetic sentiment", f"{arms['with_sentiment']['MAE']:.6f}",
+              f"{arms['with_sentiment']['DirAcc'] * 100:.2f}%",
+              str(arms["with_sentiment"]["n_features"])],
+             ["**Delta**", f"**{d_mae:+.6f}**", f"**{d_dir * 100:+.2f} pp**", "**+1**"]],
+            ["---", "---:", "---:", "---:"])
+        + f"\n\nThe harness recovered the injected signal, so the split, the "
+          f"feature selection and the delta arithmetic are all working. "
+          f"**This is not a sentiment result.** The synthetic column says nothing "
+          f"about whether real headlines help on this data; the real ablation "
+          f"remains NOT RUN, and the acceptance table records it as such.\n"
+    )
 
 
 SECTIONS = {
@@ -570,6 +758,8 @@ SECTIONS = {
     "LEADERBOARD": leaderboard_section,
     "DL": dl_section,
     "CROSS_SECTIONAL": cross_sectional_section,
+    "SENTIMENT_SELFTEST": sentiment_selftest_section,
+    "REC_BACKTEST": rec_backtest_section,
     "PORTFOLIO": portfolio_section,
     "ACCEPTANCE": acceptance_section,
 }

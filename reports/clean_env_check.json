@@ -1,0 +1,141 @@
+{
+  "generated_by": "scripts/clean_env_check.py",
+  "prd_reference": "Section 15.3 and the Section 14 acceptance table: the project must be reproducible in a clean environment.",
+  "mode": "full",
+  "python": "3.13.5",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "elapsed_seconds": 2280.8,
+  "complete": true,
+  "steps": [
+    {
+      "name": "create virtual environment",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 10.5,
+      "output_tail": [
+        "Actual environment location may have moved due to redirects, links or junctions.",
+        "Requested location: \"<path>",
+        "Actual location:    \"<path>"
+      ]
+    },
+    {
+      "name": "install pinned requirements",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 368.2,
+      "output_tail": []
+    },
+    {
+      "name": "rebuild dataset",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 12.8,
+      "output_tail": [
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Idiosyncratic_KO, Idiosyncratic_KO_5d, Idiosyncratic_MSFT, Idiosyncratic_MSFT_5d, Idiosyncratic_Mean, Idiosyncratic_NVDA",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Idiosyncratic_NVDA_5d, Idiosyncratic_PG, Idiosyncratic_PG_5d, Idiosyncratic_XOM, Idiosyncratic_XOM_5d, Intraday_Return",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Log_Dollar_Volume, MACD, MACD_Hist, MACD_Signal, Market_Cumulative, Market_Return_1d",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Market_Return_21d, Market_Return_5d, Market_Vol_21d, Month, OBV, OBV_Z",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Outlier_Z, Overnight_Gap_3d, Overnight_Return, Peer_Mean_Return_5d, Position_In_52w_Range, Price_to_SMA_10",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Price_to_SMA_20, Price_to_SMA_200, Price_to_SMA_50, ROC_20, ROC_5, RSI_14",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Relative_Strength_AAPL, Relative_Strength_CAT, Relative_Strength_HD, Relative_Strength_JNJ, Relative_Strength_JPM, Relative_Strength_KO",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Relative_Strength_MSFT, Relative_Strength_NVDA, Relative_Strength_PG, Relative_Strength_Spread, Relative_Strength_XOM, Relative_Volume_21",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Return_10d, Return_1d, Return_21d, Return_2d, Return_3d, Return_5d",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Return_Lag_1, Return_Lag_2, Return_Lag_3, Return_Lag_5, SMA_10, SMA_20",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     SMA_200, SMA_50, Signed_Volume_Flow, Stoch_D, Stoch_K, TurnOfMonth",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     UNRATE, Universe_Breadth, Universe_Dispersion, Universe_Dispersion_5d, VIX_Change_1d, VIX_Level",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     VIX_MA_21, Vol_10d, Vol_21d, Vol_5d, Vol_63d, Vol_GarmanKlass",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Vol_Of_Vol, Vol_Parkinson, Vol_Ratio_Short_Long, Vol_RogersSatchell, Volume_Change, Volume_MA_20",
+        "21:43:13 | INFO    | rebuild            |   21:43:13 | INFO    | features           |     Volume_MA_Ratio, Volume_Price_Div, Volume_Z, Yield_Spread_10Y_3M, Yield_Spread_Change_21d, Z_Score",
+        "21:43:13 | INFO    | rebuild            |   OK in 8.8s",
+        "21:43:13 | INFO    | rebuild            |",
+        "21:43:13 | INFO    | rebuild            | ==============================================================================",
+        "21:43:13 | INFO    | rebuild            | REBUILD COMPLETE in 11.2s",
+        "21:43:13 | INFO    | rebuild            |",
+        "21:43:13 | INFO    | rebuild            | Next: python retrain_models.py     # train + evaluate all eight models",
+        "21:43:13 | INFO    | rebuild            |       python src/portfolio.py      # efficient frontier and max-Sharpe weights",
+        "21:43:13 | INFO    | rebuild            |       python src/recommend.py      # BUY / HOLD / SELL and rebalancing",
+        "21:43:13 | INFO    | rebuild            |       streamlit run dashboard/app.py"
+      ]
+    },
+    {
+      "name": "retrain models",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 1837.5,
+      "output_tail": [
+        "22:13:51 | INFO    | retrain            | GRU                   DL          0.016236   0.011708    1.169  -0.0054    50.90%",
+        "22:13:51 | INFO    | retrain            | BiLSTM                DL          0.016291   0.011754    1.174  -0.0122    48.81%",
+        "22:13:51 | INFO    | retrain            | RandomForest          ML          0.017640   0.012307    1.230   0.0047    53.12%",
+        "22:13:51 | INFO    | retrain            | Naive random walk     Baseline    0.017700   0.012360    1.235  -0.0021    53.93%",
+        "22:13:51 | INFO    | retrain            | Ensemble (equal weight)ML          0.017565   0.012361    1.237   0.0132    53.14%",
+        "22:13:51 | INFO    | retrain            | XGBoost               ML          0.017738   0.012447    1.244  -0.0064    51.60%",
+        "22:13:51 | INFO    | retrain            | SVR                   ML          0.017896   0.012658    1.269  -0.0244    53.02%",
+        "22:13:51 | INFO    | retrain            | Ridge                 ML          0.017953   0.012796    1.280  -0.0309    50.88%",
+        "22:13:51 | INFO    | retrain            | ---------------------------------------------------------------------------------",
+        "22:13:51 | INFO    | retrain            |",
+        "22:13:51 | INFO    | retrain            | Section 8.3 honesty check against the naive random walk:",
+        "22:13:51 | INFO    | retrain            |   MAE          best 0.011680 vs baseline 0.012360  -> BEATS",
+        "22:13:51 | INFO    | retrain            |   Dir. accuracy best 53.12% vs baseline 53.93%  -> DOES NOT BEAT",
+        "22:13:51 | INFO    | retrain            |",
+        "22:13:51 | INFO    | retrain            |   Reported as a failure, per Section 8.3. Daily equity returns are",
+        "22:13:51 | INFO    | retrain            |   close to a random walk; the PRD grades honest reporting of this",
+        "22:13:51 | INFO    | retrain            |   outcome above a manufactured win.",
+        "22:13:51 | INFO    | retrain            |",
+        "22:13:51 | INFO    | retrain            | Leaderboard -> <path>",
+        "22:13:51 | INFO    | retrain            |",
+        "22:13:51 | INFO    | retrain            | ==============================================================================",
+        "22:13:51 | INFO    | retrain            | RETRAIN COMPLETE in 1836.2s",
+        "22:13:51 | INFO    | retrain            |",
+        "22:13:51 | INFO    | retrain            | Launch the dashboard:  streamlit run dashboard/app.py"
+      ]
+    },
+    {
+      "name": "test suite",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 48.4,
+      "output_tail": [
+        "........................................................................ [ 43%]",
+        "........................................................................ [ 86%]",
+        ".......................                                                  [100%]",
+        "167 passed in 47.22s"
+      ]
+    },
+    {
+      "name": "artifacts present and built in order",
+      "status": "PASS",
+      "exit_code": null,
+      "seconds": 0.0,
+      "output_tail": [
+        "tier 0: 2 artifact(s), newest 1790525585",
+        "tier 1: 1 artifact(s), newest 1790525593  (after tier above)",
+        "tier 2: 6 artifact(s), newest 1790527425  (after tier above)",
+        "tier 3: 4 artifact(s), newest 1790527430  (after tier above)",
+        "4/4 report/PDF deliverables present"
+      ]
+    },
+    {
+      "name": "dashboard imports, all panels execute",
+      "status": "PASS",
+      "exit_code": 0,
+      "seconds": 3.1,
+      "output_tail": [
+        "ALL PANELS EXECUTED",
+        "2026-09-27 22:14:42.525 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.525 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.525 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.526 Please replace `use_container_width` with `width`.",
+        "`use_container_width` will be removed after 2025-12-31.",
+        "For `use_container_width=True`, use `width='stretch'`. For `use_container_width=False`, use `width='content'`.",
+        "2026-09-27 22:14:42.526 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.526 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.526 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.526 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.526 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode.",
+        "2026-09-27 22:14:42.527 Thread 'MainThread': missing ScriptRunContext! This warning can be ignored when running in bare mode."
+      ]
+    }
+  ],
+  "all_passed": true,
+  "verdict": "REPRODUCIBLE: every step passed in a fresh virtual environment installed only from requirements.txt."
+}

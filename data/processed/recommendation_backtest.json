@@ -1,0 +1,59 @@
+{
+  "generated_by": "src/recommendation_backtest.py",
+  "prd_row": "Section 14 acceptance table, 'Recommendations': backtested hit-rate vs. buy-and-hold, documented with transparent contributing signals.",
+  "metric_definition": "Hit-rate is the share of held-out sessions on which the sign of the composite score agrees with the sign of the realised return from that session to the next. Buy-and-hold is the baseline: its implied position is long every session, so its hit-rate is the share of sessions each asset rose.",
+  "model": "RandomForest",
+  "window": {
+    "start": "2025-02-07",
+    "end": "2026-09-15",
+    "sessions": 404,
+    "observations": 4040
+  },
+  "thresholds": {
+    "buy": 0.15,
+    "sell": -0.15
+  },
+  "weights_configured": {
+    "forecast": 0.5,
+    "sentiment": 0.3,
+    "risk": 0.2
+  },
+  "forecast_skill_gate": 0.0,
+  "sentiment_available": false,
+  "arms": {
+    "buy_and_hold": {
+      "hit_rate": 0.5254950495049505,
+      "n_calls": 4040,
+      "n_held": 0,
+      "n_buys": 4040,
+      "n_sells": 0
+    },
+    "gated": {
+      "hit_rate": 0.49964639321074966,
+      "n_calls": 2828,
+      "n_held": 1212,
+      "n_buys": 1616,
+      "n_sells": 1212
+    },
+    "ungated": {
+      "hit_rate": 0.5106221547799696,
+      "n_calls": 1318,
+      "n_held": 2722,
+      "n_buys": 884,
+      "n_sells": 434
+    }
+  },
+  "buy_and_hold_hit_rate": 0.5254950495049505,
+  "contributing_signals": {
+    "forecast": {
+      "sign_agreement": 0.526980198019802,
+      "corr_with_realised": 0.07773000312039405
+    },
+    "risk": {
+      "sign_agreement": 0.49504950495049505,
+      "corr_with_realised": -0.01132307935666862
+    }
+  },
+  "beats_buy_and_hold": false,
+  "interpretation": "The recommendation engine trails buy-and-hold by 2.58 percentage points, so the recommendations would have been a net negative against simply holding."
+}

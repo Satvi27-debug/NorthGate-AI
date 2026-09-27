@@ -118,38 +118,13 @@ converged. Ensembles and the baseline are excluded by rule.
 
 ### 🎯 Forecasting
 
-| Model | Family | MAE | RMSE | R² | Dir. Acc. | N |
-|---|---|---:|---:|---:|---:|---:|
-| LSTM | DL | 0.011680 | 0.016192 | +0.0001 | 52.49% | 3,450 |
-| Transformer | DL | 0.011707 | 0.016212 | -0.0025 | 52.70% | 3,450 |
-| GRU | DL | 0.011708 | 0.016236 | -0.0054 | 50.90% | 3,450 |
-| BiLSTM | DL | 0.011754 | 0.016291 | -0.0122 | 48.81% | 3,450 |
-| RandomForest | ML | 0.012307 | 0.017640 | +0.0047 | 53.12% | 4,050 |
-| Naive random walk | Baseline | 0.012360 | 0.017700 | -0.0021 | 53.93% | 4,050 |
-| Ensemble (equal weight) | ML | 0.012361 | 0.017565 | +0.0132 | 53.14% | 4,050 |
-| XGBoost | ML | 0.012447 | 0.017738 | -0.0064 | 51.60% | 4,050 |
-| SVR | ML | 0.012658 | 0.017896 | -0.0244 | 53.02% | 4,050 |
-| Ridge | ML | 0.012796 | 0.017953 | -0.0309 | 50.88% | 4,050 |
+<!--LIVE:MODELTABLE-->
 
-
-**Forecasting (§8.3)** — the bar needs *both* halves.
-
-| Bar | Random walk | Best model | Verdict |
-|---|---|---|---|
-| MAE (lower is better) | 0.012360 | 0.011680 | **MET** |
-| Directional accuracy | 53.93% | 53.14% | **NOT MET** |
-
-**Portfolio (§11.4)** — optimised Sharpe **1.039** vs equal weight **1.648**, 95% CI [-0.749, 2.637] — spans zero, so the gap is not statistically meaningful. **NOT MET** — equal weight wins.
+<!--LIVE:HEADLINE-->
 
 ### 🧾 PRD acceptance, in one line
 
-**25 of 28** PRD criteria are met. 2 not met, 1 not run.
-
-- `Best model beats random walk on direction` — NOT MET
-- `Sentiment effect measured` — NOT RUN
-- `Optimised Sharpe > equal weight` — NOT MET
-
-Full table with measured values and the reason for each verdict: `reports/final_report.md`, Appendix A.
+<!--LIVE:ACCEPTANCE-->
 
 ### 🧪 Out-of-sample honesty
 
@@ -169,7 +144,7 @@ per-ticker builder **and** the cross-sectional builder.
 
 ### 🎯 Recommendations
 
-Hit-rate **49.96%** against buy-and-hold **52.55%** over 4,040 held-out ticker-sessions — the engine trails doing nothing. Documented as the PRD requires; the result is unfavourable.
+<!--LIVE:HITRATE-->
 
 ### 📰 Sentiment
 
@@ -225,9 +200,7 @@ alone, because two correlated columns carry different information.
 - 🧪 Disjoint out-of-sample backtest
 - 🎲 20,000-portfolio Monte-Carlo cross-check
 
-### 📊 Current Sharpe
-
-optimised Sharpe **1.039** vs equal weight **1.648**, 95% CI [-0.749, 2.637] — spans zero, so the gap is not statistically meaningful. **NOT MET** — equal weight wins.
+<!--LIVE:PORTFOLIO-->
 
 ---
 
@@ -405,7 +378,7 @@ reported numbers are the worse, trustworthy ones.
 | 🧪 Sentiment Ablation | ⚠️ Not Measured — provider rate-limited |
 | 🔍 Leakage & Causality Checks | ✅ |
 | 🎯 Recommendation Hit-Rate | ✅ Measured, unfavourable |
-| 🔄 Reproducibility | ✅ **7/7 steps** in a throwaway venv (38 min)</p>
+| 🔄 Reproducibility | <!--LIVE:REPRO--></p>
 
 ---
 

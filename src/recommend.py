@@ -123,6 +123,44 @@ def _normalise(series: pd.Series) -> pd.Series:
     return series.rank(pct=True)
 
 
+def _centre(series: pd.Series) -> pd.Series:
+    """Map a rank-normalised sub-signal from [0, 1] onto [-1, +1].
+
+    This exists because the fusion was mathematically incapable of producing a
+    SELL. Every sub-signal was rank-normalised to [0, 1] and every weight is
+    positive, so the composite could only ever lie in [0, sum(weights)] - it
+    could not go negative, which made `sell_threshold: -0.15` unreachable and
+    the SELL branch dead code. The threshold was not merely unused; it was
+    impossible.
+
+    Centring makes the composite a genuine signed opinion: positive leans
+    bullish, negative leans bearish, and the symmetric ±threshold pair in
+    `config.yaml` means what it appears to mean.
+    """
+    return 2.0 * _normalise(series) - 1.0
+
+
+def _fuse(f_n: pd.Series, s_n: pd.Series, r_n: pd.Series,
+          weights: dict) -> pd.Series:
+    """Weighted blend of centred sub-signals, scaled to [-1, +1].
+
+    Dividing by the total weight keeps the composite on a fixed scale
+    regardless of how many sub-signals are actually available. Without it, a
+    missing sentiment term would silently deflate every score and make the
+    thresholds mean something different depending on which data was present -
+    which is precisely the kind of quiet configuration dependence that makes a
+    backtest incomparable across runs.
+    """
+    active = {"Forecast_Signal": f_n, "Sentiment_Signal": s_n, "Risk_Signal": r_n}
+    total = sum(abs(float(weights.get(k, 0.0))) for k in active)
+    if total <= 0:
+        return pd.Series(0.0, index=f_n.index)
+    score = pd.Series(0.0, index=f_n.index)
+    for key, sig in active.items():
+        score = score + float(weights.get(key, 0.0)) * _centre(sig)
+    return score / total
+
+
 def _forecast_skill(predictions: pd.DataFrame) -> float:
     """Demonstrated edge of the forecaster over a random walk, on its own test
     predictions, mapped to [0, 1].
@@ -272,7 +310,18 @@ def build_recommendations(current_weights: dict | None = None,
     LOG.info("")
     LOG.info("Forecast skill gate: %s", _skill_note(skill))
 
-    composite = f_weight * f_n + w["sentiment"] * s_n - w["risk"] * r_n
+    # Fuse centred sub-signals. The risk term enters with a negative sign
+    # because a higher raw risk score means "more risk", which should lower the
+    # attractiveness of the asset; centring happens inside `_fuse`, so the sign
+    # is applied to the centred value.
+    composite = _fuse(
+        f_n,
+        s_n,
+        -r_n,
+        {"Forecast_Signal": f_weight,
+         "Sentiment_Signal": w["sentiment"],
+         "Risk_Signal": w["risk"]},
+    )
 
     # -- target weights from the optimiser (Section 12.2) -----------------
     if PORTFOLIO_WEIGHTS.exists():

@@ -1,0 +1,26 @@
+{
+  "status": "SELFTEST PASSED",
+  "is_a_sentiment_result": false,
+  "what_this_is": "A validation of the ablation harness, not a measurement of sentiment. The sentiment column here is SYNTHETIC - generated from the target with added noise - and carries no information about news. It exists so the with/without comparison, the chronological split and the delta arithmetic are proven to work before anyone relies on a real number.",
+  "overlap_sessions": 405,
+  "train_rows": 2830,
+  "test_rows": 1220,
+  "arms": {
+    "without_sentiment": {
+      "MAE": 0.017248613249677528,
+      "DirAcc": 0.4725,
+      "n_features": 132,
+      "n_test": 1220
+    },
+    "with_sentiment": {
+      "MAE": 0.006065282351290202,
+      "DirAcc": 0.8166666666666667,
+      "n_features": 133,
+      "n_test": 1220
+    }
+  },
+  "delta_MAE": -0.011183330898387326,
+  "delta_DirAcc": 0.3441666666666667,
+  "harness_detected_injected_signal": true,
+  "real_ablation_status": "NOT RUN - no news API key"
+}

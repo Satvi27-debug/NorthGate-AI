@@ -23,7 +23,7 @@
       "Val_Loss": 0.32494840025901794,
       "Overfit_Gap": 0.04590603709220886,
       "Diagnosis": "healthy",
-      "Train_Seconds": 225.9
+      "Train_Seconds": 244.5
     },
     {
       "RMSE": 0.01623623420395385,
@@ -42,7 +42,7 @@
       "Val_Loss": 0.2863478660583496,
       "Overfit_Gap": 0.004631996154785156,
       "Diagnosis": "healthy",
-      "Train_Seconds": 263.3
+      "Train_Seconds": 224.8
     },
     {
       "RMSE": 0.01629063906740155,
@@ -61,7 +61,7 @@
       "Val_Loss": 0.2952488958835602,
       "Overfit_Gap": 0.06525984406471252,
       "Diagnosis": "overfitting",
-      "Train_Seconds": 166.0
+      "Train_Seconds": 172.3
     },
     {
       "RMSE": 0.016212332586469168,
@@ -80,8 +80,8 @@
       "Val_Loss": 0.28547975420951843,
       "Overfit_Gap": -0.05143359303474426,
       "Diagnosis": "healthy",
-      "Train_Seconds": 177.2
+      "Train_Seconds": 168.3
     }
   ],
-  "elapsed_seconds": 850.1
+  "elapsed_seconds": 824.9
 }

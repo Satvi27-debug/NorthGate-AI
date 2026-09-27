@@ -44,7 +44,25 @@ nbformat==5.11.1
 
 # --- Section 13 : dashboard ------------------------------------------------
 plotly==5.24.1
-streamlit==1.40.2
+# Streamlit was pinned at 1.40.2 until the clean-environment check
+# (`scripts/clean_env_check.py`) proved the whole file was uninstallable:
+#
+#     tensorflow 2.21.0  requires  protobuf >=6.31.1, <8
+#     streamlit  1.40.2  requires  protobuf >=3.20,  <6
+#
+# Those ranges do not overlap, so `pip install -r requirements.txt` failed with
+# ResolutionImpossible. The development machine worked only because it had been
+# built incrementally and had drifted onto protobuf 7.36.2 - a state pip itself
+# considers a conflict and which no fresh checkout could reach. That is exactly
+# the gap a clean-environment check exists to find.
+#
+# Streamlit 1.58.0 is the earliest release whose constraint admits
+# `protobuf<8`, which TensorFlow's range fits inside. Streamlit was moved rather
+# than TensorFlow because the dashboard carries no numerical artefact: changing
+# it cannot alter a single reported metric, whereas changing TensorFlow would
+# invalidate every model number, the acceptance criteria and the backtest in
+# this repository, and require the whole chain to be regenerated.
+streamlit==1.58.0
 
 # --- report export (PDF deliverable) ---------------------------------------
 # Used only by scripts/export_report_pdf.py to render reports/final_report.md.

@@ -1,0 +1,25 @@
+{
+  "generated_by": "src/recommend.py",
+  "as_of": "2026-09-16",
+  "best_model": "RandomForest",
+  "configured_weights": {
+    "forecast": 0.5,
+    "sentiment": 0.3,
+    "risk": 0.2
+  },
+  "forecast_skill": 0.0,
+  "weights_used": {
+    "forecast": 0.0,
+    "sentiment": 0.3,
+    "risk": 0.2
+  },
+  "buy_threshold": 0.15,
+  "sell_threshold": -0.15,
+  "rebalance_band": 0.05,
+  "sentiment_available": false,
+  "distribution": {
+    "HOLD": 10
+  },
+  "disclaimer": "Educational research and decision support only. Not financial advice.",
+  "portfolio_beats_equal_weight": false
+}

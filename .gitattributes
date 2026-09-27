@@ -1,0 +1,30 @@
+# Normalise line endings so the working copy on Windows and the repository on
+# Linux do not produce a whole-file diff on every checkout.
+#
+# `* text=auto eol=lf` is the modern, minimal form: git stores LF and checks out
+# using the platform default. The explicit `eol=lf` on text files removes the
+# ambiguity for anyone reading these rules later.
+* text=auto
+
+*.py       text eol=lf
+*.md       text eol=lf
+*.yaml     text eol=lf
+*.yml      text eol=lf
+*.toml     text eol=lf
+*.cfg      text eol=lf
+*.txt      text eol=lf
+*.json     text eol=lf
+*.csv      text eol=lf
+*.ipynb    text eol=lf
+.gitignore text eol=lf
+.gitattributes text eol=lf
+
+# Binary: never line-ending translated, never diffed as text.
+*.parquet  binary
+*.npy      binary
+*.pkl      binary
+*.joblib   binary
+*.keras    binary
+*.png      binary
+*.pdf      binary
+*.docx     binary

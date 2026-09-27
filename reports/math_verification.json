@@ -1,0 +1,185 @@
+{
+  "generated_by": "src/math_utils.py::verify_against_libraries",
+  "n_checks": 15,
+  "n_passed": 15,
+  "all_passed": true,
+  "seed": 42,
+  "checks": [
+    {
+      "check": "simple_return",
+      "from_scratch": -0.012517268795107638,
+      "library": -0.012517268795107617,
+      "abs_diff": 2.0816681711721685e-17,
+      "rel_diff": 1.6630370452584593e-15,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "r_t = (P_t - P_{t-1})/P_{t-1}"
+    },
+    {
+      "check": "log_return",
+      "from_scratch": -0.012596269747216837,
+      "library": -0.012596269747217012,
+      "abs_diff": 1.7520707107365752e-16,
+      "rel_diff": 1.3909441016247474e-14,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "R_t = ln(P_t/P_{t-1})"
+    },
+    {
+      "check": "volatility_annualised",
+      "from_scratch": 0.17457079339578396,
+      "library": 0.17457079339578396,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-10,
+      "passed": true,
+      "note": "sigma_ann = sigma_daily * sqrt(252)"
+    },
+    {
+      "check": "variance",
+      "from_scratch": 0.00012093238851918049,
+      "library": 0.00012093238851918049,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "sigma^2 = E[(r-mu)^2]"
+    },
+    {
+      "check": "covariance",
+      "from_scratch": -2.5894108437309263e-07,
+      "library": -2.589410843730948e-07,
+      "abs_diff": 2.1705219273391446e-21,
+      "rel_diff": 8.382300292725089e-15,
+      "tolerance": 1e-10,
+      "passed": true,
+      "note": "population covariance, Section 7.2"
+    },
+    {
+      "check": "correlation",
+      "from_scratch": -0.0017833886022029823,
+      "library": -0.0017833886022029972,
+      "abs_diff": 1.496198998029996e-17,
+      "rel_diff": 8.389640912708315e-15,
+      "tolerance": 1e-10,
+      "passed": true,
+      "note": "rho = Cov/(sigma_a sigma_b)"
+    },
+    {
+      "check": "beta",
+      "from_scratch": -0.001485366557399032,
+      "library": -0.0014853665573990387,
+      "abs_diff": 6.7220534694101275e-18,
+      "rel_diff": 4.5255182540132215e-15,
+      "tolerance": 1e-06,
+      "passed": true,
+      "note": "beta_i = Cov(r_i, r_m)/Var(r_m), checked against OLS slope"
+    },
+    {
+      "check": "sharpe_daily",
+      "from_scratch": 0.015577081071963757,
+      "library": 0.015577081071963757,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-10,
+      "passed": true,
+      "note": "(mu - r_f)/sigma, daily"
+    },
+    {
+      "check": "max_drawdown",
+      "from_scratch": -0.2558867911919921,
+      "library": -0.2558867911919921,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "min_t (V_t/max_s<=t V_s - 1)"
+    },
+    {
+      "check": "var_empirical",
+      "from_scratch": -0.017978943510938646,
+      "library": -0.017978943510938646,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "5th percentile of the return distribution"
+    },
+    {
+      "check": "gd_weights_max_abs_error",
+      "from_scratch": 1.7763568394002505e-15,
+      "library": 0.0,
+      "abs_diff": 1.7763568394002505e-15,
+      "rel_diff": 0.0017763568394002505,
+      "tolerance": 0.005,
+      "passed": true,
+      "note": "manual GD must match the analytical OLS solution"
+    },
+    {
+      "check": "gd_bias_abs_error",
+      "from_scratch": 7.771561172376096e-16,
+      "library": 0.0,
+      "abs_diff": 7.771561172376096e-16,
+      "rel_diff": 0.0007771561172376096,
+      "tolerance": 0.005,
+      "passed": true,
+      "note": "manual GD intercept vs OLS intercept"
+    },
+    {
+      "check": "jarque_bera_stat",
+      "from_scratch": 0.8168566318038378,
+      "library": 0.8168566318038378,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "scipy cross-check"
+    },
+    {
+      "check": "skewness",
+      "from_scratch": -0.054528900640172365,
+      "library": -0.054528900640172365,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "scipy skew"
+    },
+    {
+      "check": "excess_kurtosis",
+      "from_scratch": 0.034421229478295956,
+      "library": 0.034421229478295956,
+      "abs_diff": 0.0,
+      "rel_diff": 0.0,
+      "tolerance": 1e-12,
+      "passed": true,
+      "note": "scipy kurtosis"
+    }
+  ],
+  "adf_price_level": {
+    "adf_statistic": -2.21536889485159,
+    "p_value": 0.20071479538368026,
+    "n_lags": 1,
+    "n_observations": 1498,
+    "critical_values": {
+      "1%": -3.4347228578139943,
+      "5%": -2.863471337969528,
+      "10%": -2.5677982210726897
+    },
+    "stationary_at_5pct": false,
+    "n_points": 1500
+  },
+  "adf_log_returns": {
+    "adf_statistic": -35.97196751320551,
+    "p_value": 0.0,
+    "n_lags": 0,
+    "n_observations": 1498,
+    "critical_values": {
+      "1%": -3.4347228578139943,
+      "5%": -2.863471337969528,
+      "10%": -2.5677982210726897
+    },
+    "stationary_at_5pct": true,
+    "n_points": 1499
+  }
+}

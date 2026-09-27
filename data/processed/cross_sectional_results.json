@@ -1,0 +1,199 @@
+{
+  "generated_by": "src/cross_sectional.py",
+  "status": "COMPLETED",
+  "task": "Rank the ten stocks by expected next-session return, using only information available at the previous close.",
+  "why_this_is_separate": "The Section 9.5 bar is the ABSOLUTE return versus a random walk. A cross-sectional model deliberately ignores market direction, so it is judged against its OWN no-skill baseline (predict the universe average) and is never presented as clearing the Section 9.5 bar.",
+  "seed": 42,
+  "n_features": 132,
+  "baseline": {
+    "relative_target_mae": 0.010922338427270428,
+    "rank_target_mae": 0.24901234567901234,
+    "rank_ic": 0.0,
+    "top1_hit_rate": 0.0,
+    "chance_top1": 0.1,
+    "directional_accuracy": 0.0049382716049382715,
+    "walk_forward_mae_same_folds": 0.01009647957567954
+  },
+  "model_selection": {
+    "protocol": "Grid searched by walk-forward inside the TRAINING partition only. The test window was not touched during selection.",
+    "configs_tried": 14,
+    "folds": 5,
+    "leaderboard": [
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 3,
+          "min_samples_leaf": 100,
+          "learning_rate": 0.03,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010134929641533475
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 6,
+          "min_samples_leaf": 100,
+          "learning_rate": 0.03,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010160523355472332
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 3,
+          "min_samples_leaf": 20,
+          "learning_rate": 0.03,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010161660429817523
+      },
+      {
+        "family": "ridge",
+        "params": {
+          "alpha": 100.0,
+          "kind": "ridge"
+        },
+        "walk_forward_mae": 0.01018111295119044
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 3,
+          "min_samples_leaf": 100,
+          "learning_rate": 0.1,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010199060164007585
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": null,
+          "min_samples_leaf": 100,
+          "learning_rate": 0.03,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010222631994804148
+      },
+      {
+        "family": "ridge",
+        "params": {
+          "alpha": 10.0,
+          "kind": "ridge"
+        },
+        "walk_forward_mae": 0.01022451622922389
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 6,
+          "min_samples_leaf": 20,
+          "learning_rate": 0.03,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010235763907650117
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": null,
+          "min_samples_leaf": 20,
+          "learning_rate": 0.03,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010277459437622616
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 3,
+          "min_samples_leaf": 20,
+          "learning_rate": 0.1,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010301507136575381
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 6,
+          "min_samples_leaf": 100,
+          "learning_rate": 0.1,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010316914527032395
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": null,
+          "min_samples_leaf": 20,
+          "learning_rate": 0.1,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010445497698499253
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": 6,
+          "min_samples_leaf": 20,
+          "learning_rate": 0.1,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010451843218035342
+      },
+      {
+        "family": "hist_gb",
+        "params": {
+          "max_depth": null,
+          "min_samples_leaf": 100,
+          "learning_rate": 0.1,
+          "max_iter": 300,
+          "l2_regularization": 1.0
+        },
+        "walk_forward_mae": 0.010467124957037294
+      }
+    ],
+    "best_family": "hist_gb",
+    "best_params": {
+      "max_depth": 3,
+      "min_samples_leaf": 100,
+      "learning_rate": 0.03,
+      "max_iter": 300,
+      "l2_regularization": 1.0
+    },
+    "walk_forward_mae": 0.010134929641533475,
+    "walk_forward_folds": 5,
+    "beats_no_skill_on_validation": false
+  },
+  "test": {
+    "rows": 4050,
+    "sessions": 405,
+    "relative_target_mae": 0.010922822247457333,
+    "rank_ic": null,
+    "rank_ic_sessions_defined": 403,
+    "rank_ic_sessions_degenerate": 2,
+    "top1_hit_rate": 0.1111111111111111,
+    "top1_chance": 0.1,
+    "top1_binomial_p": 0.4555608608735369,
+    "top1_better_than_chance": false,
+    "absolute_directional_accuracy": 0.6546583850931676
+  },
+  "beats_own_baseline": false,
+  "verdict": "The cross-sectional model does NOT beat the no-skill baseline. Reported as a failure, like every other result here.",
+  "leak_found_and_fixed": "The first run reported a walk-forward MAE of 0.000575 against a 0.010922 baseline - a 95% 'improvement' that was entirely fake. Relative_Target and Rank_Target are pure re-expressions of the label, and because they were numeric and absent from NON_FEATURE_COLUMNS they were swept into the model inputs. The model was reading its own answer. Both are now blocklisted, and tests/test_causality.py carries a standing guard that flags any input column correlating above 0.99 with any return-valued label."
+}

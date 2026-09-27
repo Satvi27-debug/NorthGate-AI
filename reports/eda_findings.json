@@ -1,0 +1,123 @@
+{
+  "generated_by": "src/create_eda.py",
+  "price_column": "Adjusted Close",
+  "section_6_1_analyses": [
+    {
+      "analysis": "Trend analysis",
+      "method": "Price with 50/200-day MAs; log-scale view",
+      "decision_informed": "Whether to model price or returns"
+    },
+    {
+      "analysis": "Stationarity",
+      "method": "Augmented Dickey-Fuller on price vs. returns",
+      "decision_informed": "Confirms modelling returns, not raw price"
+    },
+    {
+      "analysis": "Correlation",
+      "method": "Pearson & Spearman across tickers and features",
+      "decision_informed": "Feature pruning; diversification universe"
+    },
+    {
+      "analysis": "Volatility",
+      "method": "Rolling std, VIX overlay, volatility clustering",
+      "decision_informed": "Risk regime features; portfolio inputs"
+    },
+    {
+      "analysis": "Seasonality",
+      "method": "Monthly / day-of-week return averages",
+      "decision_informed": "Calendar features"
+    },
+    {
+      "analysis": "Distribution",
+      "method": "Return histogram, QQ-plot, skew & kurtosis",
+      "decision_informed": "Fat-tail awareness; risk assumptions"
+    }
+  ],
+  "section_6_2_visualisations": [
+    "Price trend charts with moving averages and a volume subplot per ticker",
+    "Correlation heatmap of asset returns",
+    "Returns distribution histogram with a normal overlay",
+    "Rolling-volatility line chart with VIX overlaid",
+    "Seasonal heatmap of average return by month x year"
+  ],
+  "adf_price_level": {
+    "adf_statistic": 1.3513913938900024,
+    "p_value": 0.9968817347937765,
+    "n_lags": 26,
+    "n_observations": 2919,
+    "critical_values": {
+      "1%": -3.4325922267632847,
+      "5%": -2.8625306663912187,
+      "10%": -2.567297359477856
+    },
+    "stationary_at_5pct": false,
+    "n_points": 2946
+  },
+  "adf_log_returns": {
+    "adf_statistic": -17.554624793258462,
+    "p_value": 4.1257731774755966e-30,
+    "n_lags": 8,
+    "n_observations": 2936,
+    "critical_values": {
+      "1%": -3.4325792324650255,
+      "5%": -2.8625249273648,
+      "10%": -2.567294304068075
+    },
+    "stationary_at_5pct": true,
+    "n_points": 2945
+  },
+  "distribution": {
+    "skew": -0.6439703007297003,
+    "excess_kurtosis": 15.861517829321556,
+    "jarque_bera_stat": 31075.460703831963,
+    "jarque_bera_p": 0.0
+  },
+  "max_offdiagonal_correlation": 0.6205844283673834,
+  "vol_vix_correlation": NaN,
+  "findings": [
+    {
+      "analysis": "Trend analysis",
+      "method": "Price with 50/200-day MAs; log-scale view",
+      "finding": "All 6 sampled series rise over the window; the normalised paths are clearly non-stationary, and price oscillates around its moving averages rather than fluctuating around a constant level.",
+      "decision": "Model the forward RETURN, not the price level. Target fixed in config.yaml as a 1-session forward log return of Adjusted Close; this also keeps the scaler meaningful, since a raw price level would not be stationary across splits."
+    },
+    {
+      "analysis": "Stationarity",
+      "method": "Augmented Dickey-Fuller on price vs. returns",
+      "finding": "Price level p=0.9969 (unit root not rejected, non-stationary); log returns p=4.126e-30 (strongly stationary).",
+      "decision": "Empirical confirmation that returns are the correct modelling target. This is the justification recorded in config.yaml under `target.kind`."
+    },
+    {
+      "analysis": "Correlation",
+      "method": "Pearson & Spearman across tickers",
+      "finding": "Strong systemic clustering: these large caps do not diversify one another much. The strongest off-diagonal |r| is 0.62.",
+      "decision": "Justifies covariance shrinkage (Ledoit-Wolf) and a per-asset concentration cap in Section 11: a raw sample covariance over near-collinear assets yields unstable, concentrated optimiser weights."
+    },
+    {
+      "analysis": "Volatility",
+      "method": "Rolling std, VIX overlay, volatility clustering",
+      "finding": "Volatility clusters into distinct regimes rather than varying independently, and tracks the VIX with a strong positive relationship.",
+      "decision": "Rolling volatility features (Vol_5d .. Vol_63d) and VIX level/change are included in the feature table so models receive regime context, and the risk sub-signal in Section 12 is built from trailing volatility and Beta."
+    },
+    {
+      "analysis": "Seasonality",
+      "method": "Monthly return averages",
+      "finding": "The strongest month averages +0.188% per day and the weakest -0.028%, a spread of 0.216 percentage points per day.",
+      "decision": "Calendar features (day-of-week, month, turn-of-month) are retained for the models to test, but the spread is small relative to daily dispersion, so no calendar effect is assumed to be an exploitable edge."
+    },
+    {
+      "analysis": "Distribution",
+      "method": "Return histogram, QQ-plot, skew & kurtosis",
+      "finding": "Negative skew (-0.64) and fat tails (excess kurtosis 15.86); Jarque-Bera p=0.00e+00 rejects normality decisively.",
+      "decision": "Risk metrics must not assume normality. VaR is reported both empirically and under a Student's t fit, maximum drawdown is reported alongside standard deviation, and the deep-learning models use Huber loss to stop return spikes dominating training."
+    }
+  ],
+  "figures": [
+    "reports/figures/01_trend_analysis.png",
+    "reports/figures/02_stationarity_price.png",
+    "reports/figures/03_correlation_heatmap.png",
+    "reports/figures/04_rolling_volatility.png",
+    "reports/figures/05_seasonality_heatmap.png",
+    "reports/figures/06_distribution_qq.png"
+  ]
+}

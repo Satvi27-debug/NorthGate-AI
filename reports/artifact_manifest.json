@@ -1,0 +1,163 @@
+{
+  "generated_by": "scripts/snapshot_artifacts.py",
+  "generated_utc": "2026-09-26T09:42:05.184296+00:00",
+  "artifact_count": 24,
+  "present_count": 24,
+  "artifacts": {
+    "data/raw/prices.parquet": {
+      "present": true,
+      "bytes": 1348330,
+      "modified_utc": "2026-09-18T13:55:34.613421+00:00",
+      "rows": 35352,
+      "cols": 8
+    },
+    "data/raw/macro.parquet": {
+      "present": true,
+      "bytes": 43082,
+      "modified_utc": "2026-09-18T13:55:34.618418+00:00",
+      "rows": 3095,
+      "cols": 5
+    },
+    "data/processed/cleaned_panel.parquet": {
+      "present": true,
+      "bytes": 2059333,
+      "modified_utc": "2026-09-25T13:40:02.879985+00:00",
+      "rows": 35352,
+      "cols": 13
+    },
+    "data/processed/macro_daily.parquet": {
+      "present": true,
+      "bytes": 41522,
+      "modified_utc": "2026-09-25T13:40:02.884854+00:00",
+      "rows": 2946,
+      "cols": 4
+    },
+    "data/processed/features.parquet": {
+      "present": true,
+      "bytes": 19488762,
+      "modified_utc": "2026-09-26T08:22:47.013390+00:00",
+      "rows": 26930,
+      "cols": 142
+    },
+    "data/processed/ml_metrics.csv": {
+      "present": true,
+      "bytes": 1279,
+      "modified_utc": "2026-09-26T09:13:08.323228+00:00",
+      "rows": 5,
+      "cols": 12
+    },
+    "data/processed/dl_metrics.csv": {
+      "present": true,
+      "bytes": 1319,
+      "modified_utc": "2026-09-26T09:28:47.746699+00:00",
+      "rows": 4,
+      "cols": 18
+    },
+    "data/processed/model_leaderboard.csv": {
+      "present": true,
+      "bytes": 1366,
+      "modified_utc": "2026-09-26T09:28:53.502135+00:00",
+      "rows": 10,
+      "cols": 12
+    },
+    "data/processed/optimal_weights.csv": {
+      "present": true,
+      "bytes": 231,
+      "modified_utc": "2026-09-26T09:28:51.167556+00:00",
+      "rows": 10,
+      "cols": 2
+    },
+    "data/processed/min_variance_weights.csv": {
+      "present": true,
+      "bytes": 215,
+      "modified_utc": "2026-09-26T09:28:51.167556+00:00",
+      "rows": 10,
+      "cols": 2
+    },
+    "data/processed/efficient_frontier.csv": {
+      "present": true,
+      "bytes": 4291,
+      "modified_utc": "2026-09-26T09:28:51.609903+00:00",
+      "rows": 60,
+      "cols": 4
+    },
+    "data/processed/portfolio_backtest.csv": {
+      "present": true,
+      "bytes": 691,
+      "modified_utc": "2026-09-26T09:28:51.673417+00:00",
+      "rows": 3,
+      "cols": 10
+    },
+    "data/processed/portfolio_metrics.json": {
+      "present": true,
+      "bytes": 3811,
+      "modified_utc": "2026-09-26T09:28:51.752135+00:00"
+    },
+    "data/processed/recommendations.csv": {
+      "present": true,
+      "bytes": 2915,
+      "modified_utc": "2026-09-26T09:28:53.125754+00:00",
+      "rows": 10,
+      "cols": 11
+    },
+    "data/processed/rebalance_plan.csv": {
+      "present": true,
+      "bytes": 401,
+      "modified_utc": "2026-09-26T09:28:53.128335+00:00",
+      "rows": 10,
+      "cols": 6
+    },
+    "data/processed/ml_predictions.parquet": {
+      "present": true,
+      "bytes": 738695,
+      "modified_utc": "2026-09-26T09:13:08.316539+00:00",
+      "rows": 20250,
+      "cols": 10
+    },
+    "data/processed/dl_predictions.parquet": {
+      "present": true,
+      "bytes": 439333,
+      "modified_utc": "2026-09-26T09:28:47.737816+00:00",
+      "rows": 13800,
+      "cols": 10
+    },
+    "data/processed/dl_loss_curves.csv": {
+      "present": true,
+      "bytes": 2089,
+      "modified_utc": "2026-09-26T09:28:47.742619+00:00",
+      "rows": 42,
+      "cols": 4
+    },
+    "reports/data_quality_report.json": {
+      "present": true,
+      "bytes": 4777,
+      "modified_utc": "2026-09-25T13:40:02.886911+00:00"
+    },
+    "reports/data_quality_report.md": {
+      "present": true,
+      "bytes": 2529,
+      "modified_utc": "2026-09-25T13:40:02.886911+00:00"
+    },
+    "reports/math_verification.json": {
+      "present": true,
+      "bytes": 5262,
+      "modified_utc": "2026-09-26T09:41:20.745031+00:00"
+    },
+    "reports/eda_findings.json": {
+      "present": true,
+      "bytes": 6141,
+      "modified_utc": "2026-09-25T13:11:55.000157+00:00"
+    },
+    "reports/final_report.md": {
+      "present": true,
+      "bytes": 57147,
+      "modified_utc": "2026-09-26T09:40:21.355010+00:00"
+    },
+    "notebooks/eda.ipynb": {
+      "present": true,
+      "bytes": 8754,
+      "modified_utc": "2026-09-25T13:11:55.300391+00:00",
+      "cells": 15
+    }
+  }
+}

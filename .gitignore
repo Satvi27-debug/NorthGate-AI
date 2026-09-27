@@ -1,0 +1,75 @@
+# Northgate AI Stock Predictor — repository contents
+#
+# The rule applied here: commit the CODE and the EVIDENCE, regenerate the DATA.
+#
+#   code    src/, dashboard/, tests/, scripts/, config.yaml, entry points
+#   evidence reports/ — the written report, the data-quality report, the
+#            mathematics verification, the EDA findings and figures. These are
+#            the deliverables and the record of what was measured, so they are
+#            versioned.
+#   data    data/ and models/ are byte-identical outputs of
+#            `python rebuild_dataset.py` and `python retrain_models.py`. They are
+#            reproducible in about 40 minutes on a laptop, which is what PRD
+#            Section 15.3 asks to be able to demonstrate, and the largest of them
+#            is a single 18.6 MB parquet. Versioning them would put a
+#            regenerable binary in the history forever.
+#
+# The small text artifacts the dashboard reads ARE committed, so the panels can
+# be reviewed without a 40-minute rebuild:
+#   data/processed/*_metrics.csv, model_leaderboard.csv, portfolio_metrics.json,
+#   declared_model.json, cross_sectional_results.json, recommendations.csv
+
+# --- Python -----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.venv/
+venv/
+env/
+
+# --- Test and tooling caches ------------------------------------------------
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+coverage.xml
+
+# --- Data caches ------------------------------------------------------------
+.yfinance-cache/
+
+# --- Secrets ----------------------------------------------------------------
+# The Finnhub key is read from the environment variable named by
+# `sentiment.api_key_env` in config.yaml. Nothing secret is ever committed; these
+# lines exist so a local `.env` cannot be added by accident.
+.env
+.env.*
+*.pem
+*.key
+id_rsa*
+credentials.json
+service-account*.json
+
+# --- Regenerable binary data (see the rule at the top) ----------------------
+data/raw/
+data/processed/*.parquet
+data/processed/*.npy
+data/processed/*.pkl
+models/*.keras
+models/*.pkl
+models/*.joblib
+
+# Not ignored, deliberately:
+#   data/processed/*.csv, *.json   small metrics and results, committed as evidence
+#   reports/**                     the written report and its figures
+#   notebooks/eda.ipynb            runnable, and free of absolute paths
+
+# --- OS noise ---------------------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,117 @@
+{
+  "generated_by": "src/portfolio.py",
+  "seed": 42,
+  "n_assets": 10,
+  "weight_cap": 0.2,
+  "risk_free_rate": 0.04,
+  "expected_return_method": "blend",
+  "estimation_window": {
+    "sessions": 2693,
+    "start": "2015-01-05",
+    "end": "2025-09-18"
+  },
+  "ledoit_wolf_shrinkage": 0.010545123017196867,
+  "expected_returns_annualised": {
+    "AAPL": 0.12997087953337788,
+    "MSFT": 0.13960499487374617,
+    "JPM": 0.11063524156230914,
+    "XOM": 0.0530846843254877,
+    "JNJ": 0.059754348284529635,
+    "PG": 0.06178579449018522,
+    "NVDA": 0.2972296355963891,
+    "KO": 0.05906338108259098,
+    "CAT": 0.1141137497897846,
+    "HD": 0.09889587267362412
+  },
+  "max_sharpe": {
+    "weights": {
+      "AAPL": 0.1364928809835317,
+      "MSFT": 0.2,
+      "JPM": 0.14790502513874113,
+      "XOM": 5.026012929343241e-17,
+      "JNJ": 0.08523420933558842,
+      "PG": 0.06705921915117778,
+      "NVDA": 0.2,
+      "KO": 2.1301925711379996e-17,
+      "CAT": 0.11494629956705346,
+      "HD": 0.04836236582390746
+    },
+    "expected_return": 0.14860674747432034,
+    "volatility": 0.2248394662483089,
+    "sharpe": 0.4830412973600324
+  },
+  "min_variance": {
+    "weights": {
+      "AAPL": 0.029142453937699177,
+      "MSFT": 0.07876084575303983,
+      "JPM": 0.008402093692691355,
+      "XOM": 0.1282369233371936,
+      "JNJ": 0.2,
+      "PG": 0.2,
+      "NVDA": 1.0748848100657071e-18,
+      "KO": 0.2,
+      "CAT": 0.03546440665375485,
+      "HD": 0.11999327662562113
+    },
+    "expected_return": 0.07455458310284481,
+    "volatility": 0.15200507894652043,
+    "sharpe": 0.2273251876998272
+  },
+  "monte_carlo": {
+    "n_portfolios": 20000,
+    "best_simulated_sharpe": 0.4793158569093317,
+    "analytical_best_sharpe": 0.4830412973600324,
+    "cross_check_passed": true
+  },
+  "backtest": {
+    "n_sessions": 252,
+    "start": "2025-09-19",
+    "end": "2026-09-17",
+    "optimised": {
+      "total_return": 0.2008951808259567,
+      "annualised_return": 0.2008951808259567,
+      "annualised_volatility": 0.1482413870636486,
+      "sharpe": 1.0392242383464525,
+      "sortino": 1.5656954869377648,
+      "max_drawdown": -0.11562094303870003,
+      "calmar": 1.6783814200312168,
+      "var_95": -0.015045405750755306,
+      "final_value": 1.2008951808259567
+    },
+    "equal_weight": {
+      "total_return": 0.22268632704803393,
+      "annualised_return": 0.22268632704803393,
+      "annualised_volatility": 0.10083273409851318,
+      "sharpe": 1.6481505299128623,
+      "sortino": 2.527980442603129,
+      "max_drawdown": -0.07749378987670485,
+      "calmar": 2.660697385752823,
+      "var_95": -0.010279459584278774,
+      "final_value": 1.222686327048034
+    },
+    "benchmark_buy_hold": {
+      "total_return": 0.14212095432012606,
+      "annualised_return": 0.14212095432012606,
+      "annualised_volatility": 0.12891351231575401,
+      "sharpe": 0.7850531213171464,
+      "sortino": 1.120392300569653,
+      "max_drawdown": -0.09264078159628288,
+      "calmar": 1.5242094549546057,
+      "var_95": -0.014045667434796093,
+      "final_value": 1.142120954320126
+    }
+  },
+  "beats_equal_weight": false,
+  "portfolio_beta": 1.0073055862960745,
+  "sharpe_bootstrap_ci": {
+    "mean": 0.9127949156178792,
+    "std_error": 0.8519184045207183,
+    "ci_low": -0.7490670963800364,
+    "ci_high": 2.637262508746807,
+    "n_bootstraps": 1000,
+    "block_size": 20,
+    "point_estimate": 1.0392242383464525
+  },
+  "dependency_note": "PyPortfolioOpt is not used: importing pypfopt crashes the interpreter in this environment (0xC0000005). The constrained programme is solved with scipy.optimize SLSQP and Ledoit-Wolf shrinkage comes from sklearn.covariance.LedoitWolf.",
+  "elapsed_seconds": 0.7
+}

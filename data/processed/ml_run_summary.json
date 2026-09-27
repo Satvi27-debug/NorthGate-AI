@@ -1,0 +1,737 @@
+{
+  "generated_by": "src/models_ml.py",
+  "seed": 42,
+  "n_features": 132,
+  "feature_columns": [
+    "ATR_14",
+    "Amihud_Illiquidity",
+    "BB_Width",
+    "Beta_AAPL",
+    "Beta_CAT",
+    "Beta_Cross_Section_Mean",
+    "Beta_HD",
+    "Beta_JNJ",
+    "Beta_JPM",
+    "Beta_KO",
+    "Beta_MSFT",
+    "Beta_NVDA",
+    "Beta_PG",
+    "Beta_XOM",
+    "CPIAUCSL",
+    "CPI_Mom_12m",
+    "CPI_Mom_1m",
+    "Close_Lag_1",
+    "Close_Lag_2",
+    "Close_Lag_3",
+    "Close_Lag_5",
+    "Cross_Section_Return",
+    "DGS10",
+    "DGS3MO",
+    "DayOfWeek",
+    "Distance_From_52w_High",
+    "Drawdown_From_Peak",
+    "EMA_12",
+    "EMA_26",
+    "Efficiency_Ratio_21",
+    "Efficiency_Ratio_63",
+    "Idiosyncratic_AAPL",
+    "Idiosyncratic_AAPL_5d",
+    "Idiosyncratic_CAT",
+    "Idiosyncratic_CAT_5d",
+    "Idiosyncratic_Dispersion",
+    "Idiosyncratic_HD",
+    "Idiosyncratic_HD_5d",
+    "Idiosyncratic_JNJ",
+    "Idiosyncratic_JNJ_5d",
+    "Idiosyncratic_JPM",
+    "Idiosyncratic_JPM_5d",
+    "Idiosyncratic_KO",
+    "Idiosyncratic_KO_5d",
+    "Idiosyncratic_MSFT",
+    "Idiosyncratic_MSFT_5d",
+    "Idiosyncratic_Mean",
+    "Idiosyncratic_NVDA",
+    "Idiosyncratic_NVDA_5d",
+    "Idiosyncratic_PG",
+    "Idiosyncratic_PG_5d",
+    "Idiosyncratic_XOM",
+    "Idiosyncratic_XOM_5d",
+    "Intraday_Return",
+    "Log_Dollar_Volume",
+    "MACD",
+    "MACD_Hist",
+    "MACD_Signal",
+    "Market_Cumulative",
+    "Market_Return_1d",
+    "Market_Return_21d",
+    "Market_Return_5d",
+    "Market_Vol_21d",
+    "Month",
+    "OBV",
+    "OBV_Z",
+    "Outlier_Z",
+    "Overnight_Gap_3d",
+    "Overnight_Return",
+    "Peer_Mean_Return_5d",
+    "Position_In_52w_Range",
+    "Price_to_SMA_10",
+    "Price_to_SMA_20",
+    "Price_to_SMA_200",
+    "Price_to_SMA_50",
+    "ROC_20",
+    "ROC_5",
+    "RSI_14",
+    "Relative_Strength_AAPL",
+    "Relative_Strength_CAT",
+    "Relative_Strength_HD",
+    "Relative_Strength_JNJ",
+    "Relative_Strength_JPM",
+    "Relative_Strength_KO",
+    "Relative_Strength_MSFT",
+    "Relative_Strength_NVDA",
+    "Relative_Strength_PG",
+    "Relative_Strength_Spread",
+    "Relative_Strength_XOM",
+    "Relative_Volume_21",
+    "Return_10d",
+    "Return_1d",
+    "Return_21d",
+    "Return_2d",
+    "Return_3d",
+    "Return_5d",
+    "Return_Lag_1",
+    "Return_Lag_2",
+    "Return_Lag_3",
+    "Return_Lag_5",
+    "SMA_10",
+    "SMA_20",
+    "SMA_200",
+    "SMA_50",
+    "Signed_Volume_Flow",
+    "Stoch_D",
+    "Stoch_K",
+    "TurnOfMonth",
+    "UNRATE",
+    "Universe_Breadth",
+    "Universe_Dispersion",
+    "Universe_Dispersion_5d",
+    "VIX_Change_1d",
+    "VIX_Level",
+    "VIX_MA_21",
+    "Vol_10d",
+    "Vol_21d",
+    "Vol_5d",
+    "Vol_63d",
+    "Vol_GarmanKlass",
+    "Vol_Of_Vol",
+    "Vol_Parkinson",
+    "Vol_Ratio_Short_Long",
+    "Vol_RogersSatchell",
+    "Volume_Change",
+    "Volume_MA_20",
+    "Volume_MA_Ratio",
+    "Volume_Price_Div",
+    "Volume_Z",
+    "Yield_Spread_10Y_3M",
+    "Yield_Spread_Change_21d",
+    "Z_Score"
+  ],
+  "partitions": {
+    "train": {
+      "rows": 18850,
+      "sessions": 1885,
+      "start": "2016-01-04",
+      "end": "2023-06-29"
+    },
+    "val": {
+      "rows": 4030,
+      "sessions": 403,
+      "start": "2023-06-30",
+      "end": "2025-02-06"
+    },
+    "test": {
+      "rows": 4050,
+      "sessions": 405,
+      "start": "2025-02-07",
+      "end": "2026-09-16"
+    }
+  },
+  "baseline_test": {
+    "RMSE": 0.017700485710375802,
+    "MAE": 0.0123595501648948,
+    "R2": -0.002136868055361285,
+    "DirAcc": NaN,
+    "N": 4050,
+    "MAPE_Return": 100.0,
+    "MAPE_Price": 1.2350733876171411,
+    "MAPE": 1.2350733876171411,
+    "DirAcc_Persistence": 0.5392644135188867
+  },
+  "best_params": {
+    "Ridge": {
+      "alphas": 1.0
+    },
+    "RandomForest": {
+      "n_estimators": 150,
+      "max_depth": 6,
+      "min_samples_leaf": 10
+    },
+    "XGBoost": {
+      "n_estimators": 200,
+      "learning_rate": 0.02,
+      "max_depth": 3,
+      "subsample": 0.7
+    },
+    "SVR": {
+      "kernel": "linear",
+      "C": 0.1,
+      "epsilon": 0.0001
+    }
+  },
+  "walk_forward_log": {
+    "Ridge": [
+      {
+        "params": {
+          "alphas": 1.0
+        },
+        "fold_mae": [
+          0.023506212527460227,
+          0.030838540649862137,
+          0.03804546654020521,
+          0.020335856092039792,
+          0.012300464552928578
+        ],
+        "mean_mae": 0.025005308072499188
+      },
+      {
+        "params": {
+          "alphas": 10.0
+        },
+        "fold_mae": [
+          0.023506212527460227,
+          0.030838540649862137,
+          0.03804546654020521,
+          0.020335856092039792,
+          0.012300464552928578
+        ],
+        "mean_mae": 0.025005308072499188
+      },
+      {
+        "params": {
+          "alphas": 100.0
+        },
+        "fold_mae": [
+          0.023506212527460227,
+          0.030838540649862137,
+          0.03804546654020521,
+          0.020335856092039792,
+          0.012300464552928578
+        ],
+        "mean_mae": 0.025005308072499188
+      },
+      {
+        "params": {
+          "alphas": 1000.0
+        },
+        "fold_mae": [
+          0.023506212527460227,
+          0.030838540649862137,
+          0.03804546654020521,
+          0.020335856092039792,
+          0.012300464552928578
+        ],
+        "mean_mae": 0.025005308072499188
+      },
+      {
+        "params": {
+          "alphas": 10000.0
+        },
+        "fold_mae": [
+          0.023506212527460227,
+          0.030838540649862137,
+          0.03804546654020521,
+          0.020335856092039792,
+          0.012300464552928578
+        ],
+        "mean_mae": 0.025005308072499188
+      }
+    ],
+    "RandomForest": [
+      {
+        "params": {
+          "n_estimators": 150,
+          "max_depth": 6,
+          "min_samples_leaf": 1
+        },
+        "fold_mae": [
+          0.009790551484707213,
+          0.012019748612053644,
+          0.01885243124425566,
+          0.015203005093597365,
+          0.01190110638374269
+        ],
+        "mean_mae": 0.013553368563671314
+      },
+      {
+        "params": {
+          "n_estimators": 150,
+          "max_depth": 6,
+          "min_samples_leaf": 10
+        },
+        "fold_mae": [
+          0.009779358890115547,
+          0.012109267076655633,
+          0.01720668593629064,
+          0.015235969722176336,
+          0.011926414368586283
+        ],
+        "mean_mae": 0.01325153919876489
+      },
+      {
+        "params": {
+          "n_estimators": 150,
+          "max_depth": 12,
+          "min_samples_leaf": 1
+        },
+        "fold_mae": [
+          0.009935877399684464,
+          0.012144537065143195,
+          0.01896920988942018,
+          0.015338234852489245,
+          0.012041766870465185
+        ],
+        "mean_mae": 0.013685925215440453
+      },
+      {
+        "params": {
+          "n_estimators": 150,
+          "max_depth": 12,
+          "min_samples_leaf": 10
+        },
+        "fold_mae": [
+          0.009862790939585407,
+          0.01224087532926498,
+          0.01726361605476841,
+          0.015612660726023495,
+          0.012046612242982544
+        ],
+        "mean_mae": 0.01340531105852497
+      }
+    ],
+    "XGBoost": [
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.02,
+          "max_depth": 3,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.010042398747495386,
+          0.01202378417563092,
+          0.018217454207797915,
+          0.014969116427690582,
+          0.011826571806204167
+        ],
+        "mean_mae": 0.013415865072963796
+      },
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.02,
+          "max_depth": 3,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.009909356244029745,
+          0.012053826474553426,
+          0.018412710875011243,
+          0.015108052211916335,
+          0.011801640853980512
+        ],
+        "mean_mae": 0.013457117331898253
+      },
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.02,
+          "max_depth": 5,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.010046769264809182,
+          0.012154336286610206,
+          0.018208049228010288,
+          0.015147641656773396,
+          0.011867741690816861
+        ],
+        "mean_mae": 0.013484907625403986
+      },
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.02,
+          "max_depth": 5,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.010025287837827404,
+          0.012100862739647928,
+          0.01859280447558437,
+          0.015081303596741466,
+          0.011855839987162423
+        ],
+        "mean_mae": 0.013531219727392718
+      },
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.010425910732736073,
+          0.01227599450047107,
+          0.018722932235660874,
+          0.015356484779913082,
+          0.012050954036111958
+        ],
+        "mean_mae": 0.013766455256978612
+      },
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.010356687603016855,
+          0.012164210750443655,
+          0.018890980701700824,
+          0.01523731310060483,
+          0.011933734983241339
+        ],
+        "mean_mae": 0.0137165854278015
+      },
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.05,
+          "max_depth": 5,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.010542903796870949,
+          0.012609466819109068,
+          0.018686176173783944,
+          0.015629950071334442,
+          0.012162151154101448
+        ],
+        "mean_mae": 0.01392612960303997
+      },
+      {
+        "params": {
+          "n_estimators": 200,
+          "learning_rate": 0.05,
+          "max_depth": 5,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.01054150480675676,
+          0.01265479464568189,
+          0.019115986639557433,
+          0.014963920898193362,
+          0.012194373879006092
+        ],
+        "mean_mae": 0.013894116173839104
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.02,
+          "max_depth": 3,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.01054813228063475,
+          0.012145616422775578,
+          0.018445050046077063,
+          0.015283363123782147,
+          0.011889760716783814
+        ],
+        "mean_mae": 0.01366238451801067
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.02,
+          "max_depth": 3,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.01016660029933761,
+          0.012115883657207494,
+          0.01864714833692264,
+          0.015180667692873852,
+          0.011915019762831382
+        ],
+        "mean_mae": 0.013605063949834595
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.02,
+          "max_depth": 5,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.010390032261468373,
+          0.012380126242449684,
+          0.01833372830659268,
+          0.015518721147094025,
+          0.01193844875145423
+        ],
+        "mean_mae": 0.013712211341811798
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.02,
+          "max_depth": 5,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.010333696735142183,
+          0.012365034204429765,
+          0.018875639057387872,
+          0.015279983946127016,
+          0.011946975361554
+        ],
+        "mean_mae": 0.013760265860928166
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.0111276357227628,
+          0.012584374206449518,
+          0.018994688390938996,
+          0.01578070616174656,
+          0.012135319553412106
+        ],
+        "mean_mae": 0.014124544807061995
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.05,
+          "max_depth": 3,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.011169014521035067,
+          0.012435842632766309,
+          0.019163144363158805,
+          0.01551597583607603,
+          0.012095170051911847
+        ],
+        "mean_mae": 0.014075829480989612
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.05,
+          "max_depth": 5,
+          "subsample": 0.7
+        },
+        "fold_mae": [
+          0.010838613396560304,
+          0.012926801375525283,
+          0.018773049775151568,
+          0.0160016610534953,
+          0.012298814160450276
+        ],
+        "mean_mae": 0.014167787952236546
+      },
+      {
+        "params": {
+          "n_estimators": 400,
+          "learning_rate": 0.05,
+          "max_depth": 5,
+          "subsample": 0.9
+        },
+        "fold_mae": [
+          0.011030952444165826,
+          0.013008142572798562,
+          0.019248151200328044,
+          0.01510851884696205,
+          0.012340764959472564
+        ],
+        "mean_mae": 0.01414730600474541
+      }
+    ],
+    "SVR": [
+      {
+        "params": {
+          "kernel": "linear",
+          "C": 0.1,
+          "epsilon": 0.0001
+        },
+        "fold_mae": [
+          0.03502130069595427,
+          0.03139645474788971,
+          0.04459176688814459,
+          0.02210167996385782,
+          0.012423018912558818
+        ],
+        "mean_mae": 0.02910684424168104
+      },
+      {
+        "params": {
+          "kernel": "linear",
+          "C": 0.1,
+          "epsilon": 0.001
+        },
+        "fold_mae": [
+          0.04367017236169569,
+          0.03146671367786992,
+          0.04209344155555316,
+          0.021583060153761404,
+          0.012297490958146539
+        ],
+        "mean_mae": 0.030222175741405344
+      }
+    ]
+  },
+  "validation_metrics": [
+    {
+      "RMSE": 0.016558494927469636,
+      "MAE": 0.011726756584989619,
+      "R2": -0.13366696492179586,
+      "DirAcc": 0.47574023388902714,
+      "N": 4030,
+      "MAPE_Return": 227.11484196224782,
+      "MAPE_Price": 1.167420554323896,
+      "MAPE": 1.167420554323896,
+      "Model": "Ridge"
+    },
+    {
+      "RMSE": 0.015696007470707065,
+      "MAE": 0.010586578368508402,
+      "R2": -0.018643377942967332,
+      "DirAcc": 0.5456581239114208,
+      "N": 4030,
+      "MAPE_Return": 114.99016103919118,
+      "MAPE_Price": 1.0594156947155122,
+      "MAPE": 1.0594156947155122,
+      "Model": "RandomForest"
+    },
+    {
+      "RMSE": 0.015739731815218056,
+      "MAE": 0.010707048940577007,
+      "R2": -0.024326549399527497,
+      "DirAcc": 0.5028614083105251,
+      "N": 4030,
+      "MAPE_Return": 130.4232226277594,
+      "MAPE_Price": 1.0690349147286031,
+      "MAPE": 1.0690349147286031,
+      "Model": "XGBoost"
+    },
+    {
+      "RMSE": 0.016308967842117227,
+      "MAE": 0.011313113772432161,
+      "R2": -0.09975697613341428,
+      "DirAcc": 0.4963921373475989,
+      "N": 4030,
+      "MAPE_Return": 197.86118985075404,
+      "MAPE_Price": 1.1288834724961603,
+      "MAPE": 1.1288834724961603,
+      "Model": "SVR"
+    }
+  ],
+  "test_metrics": [
+    {
+      "RMSE": 0.0179527210353983,
+      "MAE": 0.012796271463584601,
+      "R2": -0.03090165610918727,
+      "DirAcc": 0.5088198757763975,
+      "N": 4050,
+      "MAPE_Return": 158.41456055975036,
+      "MAPE_Price": 1.2803892826857979,
+      "MAPE": 1.2803892826857979,
+      "Model": "Ridge",
+      "Family": "ML",
+      "Best_Params": "{\"alphas\": 1.0}",
+      "Converged": "n/a"
+    },
+    {
+      "RMSE": 0.017639978716117756,
+      "MAE": 0.012306902254634247,
+      "R2": 0.004702791800089368,
+      "DirAcc": 0.5311801242236025,
+      "N": 4050,
+      "MAPE_Return": 101.80868610516372,
+      "MAPE_Price": 1.229930101293701,
+      "MAPE": 1.229930101293701,
+      "Model": "RandomForest",
+      "Family": "ML",
+      "Best_Params": "{\"n_estimators\": 150, \"max_depth\": 6, \"min_samples_leaf\": 10}",
+      "Converged": "n/a"
+    },
+    {
+      "RMSE": 0.017738077215197743,
+      "MAE": 0.012447446412542525,
+      "R2": -0.006397975508227294,
+      "DirAcc": 0.5160248447204969,
+      "N": 4050,
+      "MAPE_Return": 113.75532012687349,
+      "MAPE_Price": 1.2439736968174069,
+      "MAPE": 1.2439736968174069,
+      "Model": "XGBoost",
+      "Family": "ML",
+      "Best_Params": "{\"n_estimators\": 200, \"learning_rate\": 0.02, \"max_depth\": 3, \"subsample\": 0.7}",
+      "Converged": "n/a"
+    },
+    {
+      "RMSE": 0.017896381533941054,
+      "MAE": 0.012657831504423797,
+      "R2": -0.024441426407823652,
+      "DirAcc": 0.5301863354037267,
+      "N": 4050,
+      "MAPE_Return": 156.607301693501,
+      "MAPE_Price": 1.2694740164687115,
+      "MAPE": 1.2694740164687115,
+      "Model": "SVR",
+      "Family": "ML",
+      "Best_Params": "{\"kernel\": \"linear\", \"C\": 0.1, \"epsilon\": 0.0001}",
+      "Converged": "yes (25,755 iterations)"
+    },
+    {
+      "RMSE": 0.01756467174964018,
+      "MAE": 0.012360877040556812,
+      "R2": 0.01318271390038872,
+      "DirAcc": 0.5314285714285715,
+      "N": 4050,
+      "MAPE_Return": 120.18515182223113,
+      "MAPE_Price": 1.2368290513786038,
+      "MAPE": 1.2368290513786038,
+      "Model": "Ensemble (equal weight)",
+      "Family": "ML",
+      "Best_Params": "{\"members\": [\"Ridge\", \"RandomForest\", \"XGBoost\", \"SVR\"], \"weights\": \"equal\"}",
+      "Converged": "yes (average of converged members)"
+    }
+  ],
+  "beats_baseline": {
+    "mae": true,
+    "directional_accuracy": false,
+    "best_model_by_mae": "RandomForest",
+    "note": "Reported honestly per Section 8.3. A model that cannot beat the random walk on both metrics is a failure and is reported as such."
+  },
+  "elapsed_seconds": 1248.7
+}

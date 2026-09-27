@@ -1,0 +1,27 @@
+{
+  "status": "DECLARED",
+  "model": "LSTM",
+  "family": "DL",
+  "rule": "Lowest MAE on the held-out test window, among models whose optimiser converged. The averaged ensemble and the random-walk baseline are not eligible.",
+  "metric": {
+    "MAE": 0.0116798162531104,
+    "RMSE": 0.0161919280348112,
+    "R2": 6.667730866138921e-05,
+    "DirAcc": 0.524927536231884,
+    "N": 3450
+  },
+  "baseline": {
+    "MAE": 0.0123595501648948,
+    "DirAcc": 0.5392644135188867
+  },
+  "margin_mae_pct": 5.49966546286667,
+  "beats_baseline_on_mae": true,
+  "beats_baseline_on_direction": false,
+  "runner_up": {
+    "model": "Transformer",
+    "MAE": 0.0117069324530387
+  },
+  "excluded": [],
+  "does_not_mean": "Being the best model here does not make it profitable. It beats the random walk on the size of a daily move by a small margin and still loses to the random walk on which way the price goes. Section 8.3 requires both, and the result is reported as a failure.",
+  "selection_integrity": "The evaluation was already complete and already published before this deployment choice was made, and the Section 8.3 verdict is unchanged by it: that verdict turns on whether ANY model beat the baseline on both metrics, and none did."
+}

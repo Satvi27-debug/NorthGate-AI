@@ -1,0 +1,182 @@
+{
+  "generated_by": "src/clean.py",
+  "config": {
+    "calendar_source": "^GSPC",
+    "max_price_ffill": 3,
+    "outlier": {
+      "rolling_window": 63,
+      "z_threshold": 5.0,
+      "iqr_multiplier": 1.5,
+      "log_return": true
+    },
+    "backfill_used": false
+  },
+  "rows": {
+    "rows_in": 35352,
+    "duplicate_rows_removed": 0,
+    "rows_out": 35352,
+    "rows_dropped_unusable": 0,
+    "net_change_pct": 0.0
+  },
+  "calendar": {
+    "sessions": 2946,
+    "start": "2015-01-02",
+    "end": "2026-09-17",
+    "tickers": 12
+  },
+  "gaps": {
+    "AAPL": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "CAT": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "HD": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "JNJ": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "JPM": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "KO": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "MSFT": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "NVDA": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "PG": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "XOM": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "^GSPC": {
+      "sessions_missing_before": 2,
+      "gap_cells_filled": 2,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    },
+    "^VIX": {
+      "sessions_missing_before": 0,
+      "gap_cells_filled": 0,
+      "remaining_gaps": 0,
+      "remaining_are_leading_history": 0
+    }
+  },
+  "outliers": {
+    "AAPL": {
+      "outliers_rolling_zscore": 0,
+      "outliers_iqr_fence": 168,
+      "outliers_either": 168,
+      "rows_retained": 2946
+    },
+    "CAT": {
+      "outliers_rolling_zscore": 3,
+      "outliers_iqr_fence": 151,
+      "outliers_either": 151,
+      "rows_retained": 2946
+    },
+    "HD": {
+      "outliers_rolling_zscore": 1,
+      "outliers_iqr_fence": 112,
+      "outliers_either": 112,
+      "rows_retained": 2946
+    },
+    "JNJ": {
+      "outliers_rolling_zscore": 4,
+      "outliers_iqr_fence": 140,
+      "outliers_either": 140,
+      "rows_retained": 2946
+    },
+    "JPM": {
+      "outliers_rolling_zscore": 4,
+      "outliers_iqr_fence": 152,
+      "outliers_either": 152,
+      "rows_retained": 2946
+    },
+    "KO": {
+      "outliers_rolling_zscore": 3,
+      "outliers_iqr_fence": 143,
+      "outliers_either": 143,
+      "rows_retained": 2946
+    },
+    "MSFT": {
+      "outliers_rolling_zscore": 3,
+      "outliers_iqr_fence": 157,
+      "outliers_either": 157,
+      "rows_retained": 2946
+    },
+    "NVDA": {
+      "outliers_rolling_zscore": 7,
+      "outliers_iqr_fence": 151,
+      "outliers_either": 151,
+      "rows_retained": 2946
+    },
+    "PG": {
+      "outliers_rolling_zscore": 2,
+      "outliers_iqr_fence": 149,
+      "outliers_either": 149,
+      "rows_retained": 2946
+    },
+    "XOM": {
+      "outliers_rolling_zscore": 1,
+      "outliers_iqr_fence": 160,
+      "outliers_either": 160,
+      "rows_retained": 2946
+    },
+    "^GSPC": {
+      "outliers_rolling_zscore": 3,
+      "outliers_iqr_fence": 188,
+      "outliers_either": 188,
+      "rows_retained": 2946
+    },
+    "^VIX": {
+      "outliers_rolling_zscore": 4,
+      "outliers_iqr_fence": 141,
+      "outliers_either": 141,
+      "rows_retained": 2946
+    }
+  },
+  "outlier_policy": "FLAGGED ONLY - not deleted, not winsorised. Section 4.1 Stage 4 requires that corporate-action moves be kept; confirming which flags are genuine vendor errors requires a corporate-actions calendar this project does not have.",
+  "invariant_violations": {
+    "count": 0,
+    "rule": "Low <= min(Open,Close,High) AND High >= max(Open,Close,Low)",
+    "rows": []
+  },
+  "duplicate_conflicts": []
+}

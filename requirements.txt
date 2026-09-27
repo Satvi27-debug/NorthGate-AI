@@ -1,0 +1,56 @@
+numpy==2.1.3
+pandas==2.2.3
+pyarrow==18.1.0
+python-dateutil==2.9.0.post0
+PyYAML==6.0.2
+joblib==1.4.2
+
+# --- Section 3 : ingestion -------------------------------------------------
+yfinance==1.7.0
+pandas-datareader==0.11.1
+
+# --- Section 4 / 5 : numerical foundation ----------------------------------
+scipy==1.14.1
+statsmodels==0.15.0
+
+# --- Section 8 : classical machine learning --------------------------------
+scikit-learn==1.5.2
+xgboost==3.4.1
+
+# --- Section 9 : deep learning ---------------------------------------------
+# TensorFlow 2.21 has no native Windows GPU build; CPU training is supported and
+# is what this project uses. A free Colab/Kaggle GPU session only speeds it up.
+tensorflow==2.21.0
+
+# --- Section 10 : sentiment ------------------------------------------------
+transformers==4.48.0
+torch==2.8.0
+finnhub-python==2.4.29
+nltk==3.10.3
+
+# --- Section 11 : portfolio optimisation -----------------------------------
+# NOTE: PyPortfolioOpt is intentionally NOT listed. Importing `pypfopt` crashes
+# the interpreter on Windows in this environment (access violation, exit code
+# 0xC0000005), reproduced across all nine of its submodules. Section 11 is
+# solved with scipy.optimize SLSQP and sklearn's LedoitWolf instead - the same
+# constrained programme and the same shrinkage estimator. See README.md.
+#
+# PyPortfolioOpt==1.5.5
+# cvxpy==1.5.3
+
+# --- Section 6 : EDA -------------------------------------------------------
+matplotlib==3.9.2
+nbformat==5.11.1
+
+# --- Section 13 : dashboard ------------------------------------------------
+plotly==5.24.1
+streamlit==1.40.2
+
+# --- report export (PDF deliverable) ---------------------------------------
+# Used only by scripts/export_report_pdf.py to render reports/final_report.md.
+# The PDF itself is produced by a headless Chromium browser, which must be
+# installed separately (Google Chrome or Microsoft Edge).
+Markdown==3.11
+
+# --- tests -----------------------------------------------------------------
+pytest==9.1.1

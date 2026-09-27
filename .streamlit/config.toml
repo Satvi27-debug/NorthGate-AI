@@ -1,0 +1,36 @@
+# Base theme for the Northgate dashboard.
+#
+# Set here rather than relying only on the injected stylesheet so the page is
+# correct from the first paint, before any custom CSS is parsed. The palette
+# matches PALETTE in dashboard/app.py; keep the two in step.
+#
+# The type scale is deliberately restrained. The earlier version rendered at
+# 1.9rem headings over 1.0rem labels, which read as a marketing page. This is a
+# research report, so the hierarchy is compressed and the body is given room to
+# breathe instead.
+
+[theme]
+base = "dark"
+primaryColor = "#5B8DEF"
+backgroundColor = "#0E1117"
+secondaryBackgroundColor = "#161B22"
+textColor = "#E6EDF3"
+font = "sans serif"
+
+# Note: there is deliberately no [theme.sidebar] block. Streamlit 1.40 rejects
+# it outright ("not a valid config option") and the sidebar is styled from the
+# injected stylesheet instead, which is where the rest of the chrome lives.
+
+[client]
+toolbarMode = "minimal"
+showErrorDetails = true
+
+# The collapsed sidebar is NOT set here. `client.initial_sidebar_state` was
+# removed from the config schema, and putting it back only produces a startup
+# warning that is invisible in a background run. It is a page-config argument
+# instead - `st.set_page_config(initial_sidebar_state="collapsed")` in main() -
+# which is where Streamlit 1.40 expects it. `tests/test_dashboard.py` asserts it
+# is set there and is absent here.
+
+[browser]
+gatherUsageStats = false

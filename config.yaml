@@ -1,0 +1,272 @@
+# ============================================================================
+# Northgate Quantitative Research
+# AI-Based Stock Market Prediction & Portfolio Optimization System
+# Single source of truth for every tunable in the pipeline (PRD Section 15.3).
+# No module may hard-code a value that belongs in this file.
+# ============================================================================
+
+# --- Section 3.2 : universe, benchmark, volatility index -------------------
+universe:
+  - AAPL
+  - MSFT
+  - JPM
+  - XOM
+  - JNJ
+  - PG
+  - NVDA
+  - KO
+  - CAT
+  - HD
+benchmark: "^GSPC"
+volatility_index: "^VIX"
+
+# --- Section 3.2 : FRED macro series ---------------------------------------
+fred_series:
+  - DGS10
+  - DGS3MO
+  - CPIAUCSL
+  - UNRATE
+
+# --- Section 3.4 : date range ----------------------------------------------
+# end_date: null resolves to today at ingestion time (PRD Listing 3.1).
+start_date: "2015-01-01"
+end_date: null
+
+# --- Section 5 : target definition -----------------------------------------
+# PRD Section 3.4 leaves this open ("next-day adjusted close or next-day log
+# return"). We fix it here ONCE. Section 6.3 establishes via ADF that the price
+# level is non-stationary while returns are stationary, so we model the forward
+# LOG RETURN of the ADJUSTED close. Documented in reports/final_report.md.
+price_column: "Adjusted Close"
+target:
+  kind: log_return          # log_return | simple_return
+  horizon: 1
+
+# --- Section 9.4 : chronological split -------------------------------------
+split:
+  train: 0.70
+  val: 0.15
+  test: 0.15
+
+# --- Section 5.3 : sequence generation -------------------------------------
+sequence_length: 60
+
+# --- Section 15.3 : reproducibility ----------------------------------------
+random_seed: 42
+
+# --- Section 4.1 : cleaning parameters -------------------------------------
+clean:
+  # Stage 1 - structural alignment
+  calendar_source: "^GSPC"          # exchange calendar taken from the benchmark
+  # Stage 2 - missing-value handling
+  max_price_ffill: 3                # sessions; NEVER back-filled (Section 4.1)
+  # Stage 4 - outlier detection. Flag only, never auto-delete.
+  outlier:
+    rolling_window: 63              # ~one trading quarter
+    z_threshold: 5.0                # rolling z-score fence
+    iqr_multiplier: 1.5             # 1.5 x IQR fence (Section 4.1 Stage 4)
+    log_return: true
+  # Stage 5 - consistency validation
+  ohlc_invariant: true
+
+# --- Section 5.1 : feature engineering -------------------------------------
+features:
+  sma_windows: [10, 20, 50, 200]
+  ema_windows: [12, 26]
+  macd_fast: 12
+  macd_slow: 26
+  macd_signal: 9
+  rsi_period: 14
+  bollinger_window: 20
+  bollinger_std: 2.0
+  atr_period: 14
+  stochastic_k: 14
+  stochastic_d: 3
+  roc_windows: [5, 20]
+  return_windows: [1, 5, 10, 21]
+  volatility_windows: [5, 10, 21, 63]
+  volume_z_window: 21
+  obv_window: 21
+  drop_warmup_rows: true
+
+# --- Section 8 : classical ML ----------------------------------------------
+# Grids are deliberately small. The walk-forward search refits every candidate
+# on every fold (Section 8.2), so grid size multiplies by n_splits on ~19k rows.
+# Each grid below is a coarse but meaningful sweep; `max_tuning_rows` additionally
+# caps the rows used *during search only* - the final refit always uses the whole
+# training partition, so this affects speed, not the validity of the result.
+ml:
+  n_splits: 5                       # expanding-window TimeSeriesSplit (Listing 8.1)
+  # Search-time row caps. The walk-forward search refits each candidate on each
+  # fold, so runtime scales with (grid x n_splits x rows). SVR is O(n^2) in
+  # memory and the forests are the other CPU bottleneck, so they search on a
+  # recent slice of the training partition. This affects SEARCH SPEED ONLY: the
+  # slice is the tail of an already-chronological partition (so no forward reach),
+  # and the final refit always uses every training row.
+  #
+  # The SVR cap is 8,000 rather than something smaller because the linear
+  # solver's cost is dominated by iteration count, not row count, and the fit
+  # must actually converge: measured on the real training partition, a converged
+  # fit takes 4.0s at 2,000 rows, 24.4s at 8,000, and 155.4s for the
+  # full-partition refit. Searching on too few rows would select a C and epsilon
+  # tuned to the wrong problem, which is a worse trade than eleven minutes.
+  max_tuning_rows: 8000            # default cap when a family has no explicit one
+  search_row_caps:
+    svr: 8000
+    random_forest: 8000
+    xgboost: 8000
+  models:
+    ridge:
+      alphas: [1.0, 10.0, 100.0, 1000.0, 10000.0]
+    # RandomForest: 4 configs x 5 folds. Trees dominate the runtime, so the grid
+    # trades breadth for depth.
+    random_forest:
+      n_estimators: [150]
+      max_depth: [6, 12]
+      min_samples_leaf: [1, 10]
+    # XGBoost: 8 configs x 5 folds, via the histogram tree method that keeps it
+    # tractable on CPU. This is the sweep Section 8.1 asks for.
+    xgboost:
+      n_estimators: [200, 400]
+      learning_rate: [0.02, 0.05]
+      max_depth: [3, 5]
+      subsample: [0.7, 0.9]
+    # SVR: 2 configs x 5 folds. Kernel is `linear` by default: SVR's RBF variant
+    # materialises an n x n kernel matrix and is O(n^2) in memory, which does not
+    # scale to ~23k training rows on a laptop. LinearSVR solves the same
+    # epsilon-insensitive loss in the primal and is tractable. Set kernel: rbf to
+    # use the RBF variant on a smaller dataset, at the cost of memory.
+    #
+    # C is restricted to 0.1 by measurement, not taste. liblinear's coordinate
+    # descent converges very slowly on this feature table, which is dominated by
+    # strongly co-moving price-level terms (SMA/EMA levels, price lags, 52-week
+    # high/low, drawdown), and the required iteration count scales steeply with C.
+    # Removing exactly-collinear columns (see features.feature_columns) helped
+    # but did not fix it, which is the honest result: the residual dependence is
+    # near-collinearity, not algebraic. Measured on the full 22,880-row training
+    # partition with 132 features:
+    #
+    #     C=0.1  eps=0.0001   converged,  22,633 iterations,  248s
+    #     C=1.0  eps=0.001    did NOT converge, stopped at the 200,000 cap (26 min)
+    #
+    # A configuration that cannot be fitted to optimality cannot be scored
+    # honestly, so C=1.0 is excluded rather than searched and then reported with
+    # a stale coefficient vector. The walk-forward search had already selected
+    # C=0.1 before the restriction was applied, so no reported result changes.
+    svr:
+      kernel: ["linear"]
+      C: [0.1]
+      epsilon: [0.0001, 0.001]
+
+  # Equal-weight ensemble of the four families, reported as an extra row in the
+  # Section 9.5 table. Averaging decorrelated errors is the cheapest genuine
+  # variance reduction available, and it is validated exactly like everything
+  # else: walk-forward inside the training partition only.
+  ensemble:
+    enabled: true
+    members: ["Ridge", "RandomForest", "XGBoost", "SVR"]
+
+# --- Supplementary : cross-sectional ranking --------------------------------
+# A SEPARATE experiment, deliberately not part of the Section 9.5 leaderboard.
+# It asks "which of these ten stocks beats the other nine?" rather than "will
+# the price rise?", so it is judged against its own no-skill baseline ("they
+# will all do the same") and can never be presented as clearing the Section 8.3
+# forecast bar. The task change, the baseline and the result are all disclosed.
+#
+# This exists because a null here is informative: if ranking the universe were
+# easy, it would tell us the features carry signal that the absolute-return
+# formulation is failing to extract.
+cross_sectional:
+  enabled: true
+  beta_window: 252          # trailing sessions for the idiosyncratic-return Beta
+  grid:
+    hist_gb:
+      max_depth: [3, 6, null]      # null = unlimited depth
+      min_samples_leaf: [20, 100]
+      learning_rate: [0.03, 0.1]
+      max_iter: [300]
+      l2_regularization: [1.0]
+    ridge:
+      alpha: [10.0, 100.0]
+  # A hit rate a little above chance is not skill. With 10 assets and ~405
+  # sessions, only a binomial p-value below this threshold counts as a result.
+  significance_level: 0.05
+
+# --- Section 9 : deep learning ---------------------------------------------
+# Trained on CPU. Sequence windows are built PER TICKER (see note): a window is
+# then contiguous in time for one asset, which is the correct semantics for a
+# time-series model, and the sample count falls from ~27k to ~2.7k, which is what
+# makes four architectures trainable on a laptop in minutes rather than hours.
+# The design choice is documented in reports/final_report.md.
+dl:
+  per_ticker_windows: true
+  epochs: 60
+  patience: 8
+  batch_size: 32
+  learning_rate: 0.001
+  loss: huber
+  units_lstm: [64, 32]
+  units_gru: [64, 32]
+  units_bilstm: [64]
+  transformer:
+    heads: 4
+    key_dim: 32
+    ff_dim: 64
+    blocks: 2
+    dropout: 0.1
+
+# --- Section 10 : sentiment ------------------------------------------------
+sentiment:
+  provider: finnhub
+  api_key_env: FINNHUB_API_KEY
+  market_close_hour: 16             # news at/after this maps to the NEXT session
+  finbert_model: ProsusAI/finbert
+  mood_bullish_threshold: 0.15
+  mood_bearish_threshold: -0.15
+  momentum_window: 3
+  news_volume_window: 7
+  finbert_batch_size: 32
+
+# --- Section 11 : portfolio optimisation -----------------------------------
+portfolio:
+  risk_free_rate: 0.04
+  # PRD Listing 11.1 shows weight_bounds=(0,1) (long-only) while Section 11.4
+  # additionally requires a concentration cap. We apply BOTH: long-only with a
+  # per-asset cap. 0.20 is a genuine constraint for a 10-asset universe.
+  weight_bounds: [0.0, 0.20]
+  monte_carlo_portfolios: 20000
+  covariance_estimator: ledoit_wolf
+  frontier_points: 60
+  # The backtest window is DISJOINT from and strictly later than the estimation
+  # window, so the optimiser never sees the returns it is judged on. This is the
+  # portfolio layer's equivalent of the no-look-ahead rule from Section 5.
+  backtest_days: 252
+  # Section 11.1 allows historical mean, model-implied, or a blend. We blend,
+  # which is the only choice that makes the Section 1 "integration" claim real.
+  expected_return_method: blend      # historical | model | blend
+  blend_weight_model: 0.5            # weight on model-implied mu
+  lookback_days: 504                 # 2 years of daily data for mu and Sigma
+
+# --- Section 12 : recommendation engine ------------------------------------
+recommend:
+  # Composite = w1*forecast + w2*sentiment - w3*risk  (Section 12.1)
+  weights:
+    forecast: 0.5
+    sentiment: 0.3
+    risk: 0.2
+  buy_threshold: 0.15               # no-trade band between these two (Section 12.2)
+  sell_threshold: -0.15
+  rebalance_band: 0.05              # Listing 12.1
+
+# --- Section 13 : dashboard ------------------------------------------------
+dashboard:
+  title: Northgate AI Stock Predictor
+  default_risk_free_rate: 4.0
+  confidence_band_z: 1.96
+  price_history_days: 756
+  disclaimer: >-
+    Educational research and decision support only. Not financial advice.
+
+# --- Section 6 : EDA -------------------------------------------------------
+eda:
+  random_seed: 42
